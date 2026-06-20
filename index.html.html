@@ -374,15 +374,10 @@ body:not(.unlocked) header,body:not(.unlocked) .upload-strip,body:not(.unlocked)
   </div>
 
   <div class="upload-strip">
-    <p><strong>Atualização mensal:</strong> carregue o arquivo .xlsx exportado do sistema PTI para adicionar um novo mês</p>
-    <button class="btn-upload" onclick="document.getElementById('file-input').click()">
-      ⬆&nbsp; Carregar novo mês
-    </button>
     <div id="semester-select" class="semester-switch" role="group" aria-label="Selecionar semestre">
       <button type="button" class="active" data-sem="2026/1">1º sem 2026</button>
       <button type="button" data-sem="2026/2">2º sem 2026</button>
     </div>
-    <input type="file" id="file-input" accept=".xlsx,.xls" multiple>
     <span id="upload-status"></span>
   </div>
 
@@ -462,10 +457,6 @@ function findDbKeyFor(monthNum,sem){
 }
 
 // ── Upload ──
-document.getElementById("file-input").addEventListener("change",e=>{
-  const files=[...e.target.files]; e.target.value="";
-  requirePassword(()=>{ files.forEach(processFile); });
-});
 document.addEventListener("dragover",e=>{e.preventDefault();document.getElementById("drop-overlay").classList.add("show")});
 document.addEventListener("dragleave",e=>{if(!e.relatedTarget)document.getElementById("drop-overlay").classList.remove("show")});
 document.addEventListener("drop",e=>{

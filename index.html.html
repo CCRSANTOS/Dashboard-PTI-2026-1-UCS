@@ -90,6 +90,15 @@ header{
 #file-input{display:none}
 #upload-status{font-size:11px;color:var(--gold);font-weight:500}
 
+/* Delete month button */
+.btn-delete{
+  display:inline-flex;align-items:center;gap:8px;
+  background:transparent;border:1px solid rgba(255,255,255,0.06);
+  color:var(--text);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;
+  cursor:pointer;border-radius:8px;transition:all 0.15s;
+}
+.btn-delete:hover{background:rgba(255,0,0,0.06);border-color:rgba(255,0,0,0.18);color:#FFB3B3}
+
 /* ─ Month tabs ─ */
 .month-tabs{
   display:flex;align-items:center;
@@ -106,6 +115,12 @@ header{
 .tab-btn:hover{color:rgba(255,255,255,0.8)}
 .tab-btn.active{color:#fff;border-bottom-color:var(--gold);font-weight:600}
 .tab-hint{margin-left:auto;font-size:11px;color:rgba(255,255,255,0.18);padding:11px 0;white-space:nowrap}
+
+.tab-item{display:inline-flex;align-items:center;margin-right:8px}
+.tab-item .tab-btn{padding-right:6px}
+.tab-del{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:6px;border-radius:6px;margin-left:6px;font-size:12px}
+.tab-del:hover{color:#FFB3B3;background:rgba(255,0,0,0.06)}
+.tab-del[disabled]{opacity:0.6;cursor:not-allowed;color:rgba(255,255,255,0.6);background:transparent;border-color:rgba(255,255,255,0.03)}
 
 /* ─ Main ─ */
 main{padding:24px 32px 48px;max-width:1440px;margin:0 auto}
@@ -258,6 +273,16 @@ main{position:relative;z-index:1}
   font-size:13px;box-shadow:0 8px 32px rgba(0,0,0,0.5);
   transform:translateY(80px);opacity:0;transition:all 0.3s;z-index:999;
 }
+#pw-modal{display:none;position:fixed;inset:0;z-index:1200;align-items:center;justify-content:center}
+#pw-modal.show{display:flex}
+#pw-modal .pw-back{position:fixed;inset:0;background:rgba(4,8,18,0.6);backdrop-filter:blur(4px)}
+#pw-modal .pw-box{position:relative;background:var(--card);border-radius:12px;padding:18px 18px 12px;border:1px solid var(--border);width:360px;z-index:2}
+#pw-modal .pw-box h3{margin-bottom:8px;font-size:14px}
+#pw-modal .pw-row{display:flex;gap:8px;margin-top:8px}
+#pw-modal input[type=password]{flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text)}
+#pw-modal button{padding:9px 12px;border-radius:8px;border:none;cursor:pointer}
+#pw-modal .pw-ok{background:var(--gold);color:var(--navy);font-weight:700}
+#pw-modal .pw-cancel{background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.04)}
 #toast.show{transform:translateY(0);opacity:1}
 #toast.ok{border-left:4px solid var(--teal)}
 #toast.err{border-left:4px solid #D94F3D}
@@ -289,6 +314,18 @@ main{position:relative;z-index:1}
   <span>Arquivos .xlsx do sistema PTI</span>
 </div>
 <div id="toast"></div>
+<div id="pw-modal" aria-hidden="true">
+  <div class="pw-back" onclick="closePwModal()"></div>
+  <div class="pw-box" role="dialog" aria-modal="true" aria-labelledby="pw-title">
+    <h3 id="pw-title">Autenticação necessária</h3>
+    <div>Insira a senha para autorizar alterações.</div>
+    <div class="pw-row">
+      <input id="pw-input" type="password" placeholder="Senha" />
+      <button class="pw-ok" id="pw-submit">OK</button>
+      <button class="pw-cancel" onclick="closePwModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
 
 <header>
   <div class="header-top">
@@ -368,13 +405,16 @@ const fmt=(n,d=2)=>n==null?"—":Number(n).toLocaleString("pt-BR",{minimumFracti
 
 // ── Upload ──
 document.getElementById("file-input").addEventListener("change",e=>{
-  [...e.target.files].forEach(processFile); e.target.value="";
+  const files=[...e.target.files]; e.target.value="";
+  requirePassword(()=>{ files.forEach(processFile); });
 });
 document.addEventListener("dragover",e=>{e.preventDefault();document.getElementById("drop-overlay").classList.add("show")});
 document.addEventListener("dragleave",e=>{if(!e.relatedTarget)document.getElementById("drop-overlay").classList.remove("show")});
 document.addEventListener("drop",e=>{
   e.preventDefault();document.getElementById("drop-overlay").classList.remove("show");
-  [...e.dataTransfer.files].filter(f=>f.name.match(/\.xlsx?$/i)).forEach(processFile);
+  const files=[...e.dataTransfer.files].filter(f=>f.name.match(/\.xlsx?$/i));
+  if(!files.length) return;
+  requirePassword(()=>{ files.forEach(processFile); });
 });
 
 function processFile(file){
@@ -433,11 +473,41 @@ function processFile(file){
 // ── Render ──
 function renderAll(){renderTabs();renderContent()}
 
+function deleteMonth(m,event){
+  if(event && event.stopPropagation) event.stopPropagation();
+  const target = m || active;
+  if(!target){toast('Nenhum mês selecionado.','err');return}
+  requirePassword(()=>{
+    if(!confirm(`Confirma exclusão do mês ${target}? Esta ação não pode ser desfeita.`)) return;
+    try{
+      const monthsBefore = sorted();
+      const idx = monthsBefore.indexOf(target);
+      delete db[target];
+      const months = sorted();
+      if(months.length===0){
+        document.getElementById('main-content').innerHTML='<div class="loading"><p>Sem dados.</p></div>';
+        document.getElementById('month-tabs').innerHTML='';
+        document.getElementById('last-update').textContent='';
+        toast(`✅ Mês ${target} excluído`,'ok');
+        active=null;charts={};return;
+      }
+      // choose new active: prefer previous month, else nearest available
+      const newIndex = Math.min(idx, months.length-1);
+      active = months[newIndex] || months[months.length-1];
+      renderAll();
+      toast(`✅ Mês ${target} excluído. Agora mostrando ${active}`,'ok');
+    }catch(err){toast('Erro ao excluir: '+err.message,'err')}
+  });
+}
+
 function renderTabs(){
   const months=sorted();
+  const disableAll = months.length<=1;
   document.getElementById("month-tabs").innerHTML=
-    months.map(m=>`<button class="tab-btn${m===active?" active":""}" onclick="switchTo('${m}')">${m}</button>`).join("")+
-    `<span class="tab-hint">← Carregue novos meses acima</span>`;
+    months.map(function(m){
+      const delAttr = disableAll ? 'disabled title="Não é possível excluir o último mês"' : `onclick="deleteMonth('${m}', event)" title="Excluir ${m}"`;
+      return `<div class="tab-item${m===active?" active":""}"><button class="tab-btn${m===active?" active":""}" onclick="switchTo('${m}')">${m}</button><button class="tab-del" ${delAttr}>✖</button></div>`;
+    }).join("")+`<span class="tab-hint">← Carregue novos meses acima</span>`;
 }
 
 function switchTo(m){active=m;renderTabs();renderContent()}
@@ -670,6 +740,31 @@ function toast(msg,type){
   t.textContent=msg;t.className="show "+type;
   setTimeout(()=>{t.className=""},4000);
 }
+
+// ── Password modal / guard
+let _pwCallback = null;
+function requirePassword(cb){
+  _pwCallback = cb;
+  const m = document.getElementById('pw-modal');
+  m.classList.add('show');
+  m.setAttribute('aria-hidden','false');
+  const ip = document.getElementById('pw-input');
+  ip.value = '';
+  setTimeout(()=>ip.focus(),50);
+}
+function closePwModal(){
+  const m = document.getElementById('pw-modal');
+  m.classList.remove('show');
+  m.setAttribute('aria-hidden','true');
+  _pwCallback = null;
+}
+document.getElementById('pw-submit').addEventListener('click',()=>{
+  const val = document.getElementById('pw-input').value||'';
+  if(val==="ucs"){
+    const cb = _pwCallback; closePwModal(); if(typeof cb==='function') cb();
+  }else{toast('Senha inválida.','err');document.getElementById('pw-input').focus();}
+});
+document.getElementById('pw-input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('pw-submit').click()}});
 
 renderAll();
 </script>

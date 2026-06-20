@@ -185,7 +185,8 @@ main{padding:24px 32px 48px;max-width:1440px;margin:0 auto}
   padding:20px 22px;border:1px solid var(--border);
 }
 .chart-title{font-size:12px;font-weight:600;color:var(--muted);
-  text-transform:uppercase;letter-spacing:0.8px;margin-bottom:16px}
+  text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px}
+.chart-note{font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.4}
 .chart-wrap{position:relative;height:220px}
 .chart-line-full{grid-column:1/-1}
 
@@ -337,7 +338,7 @@ main{position:relative;z-index:1}
       <div class="brand-divider"></div>
       <div class="brand-text">
         <h1>Dashboard Gerencial PTI</h1>
-        <p>Relatório de Fechamento &nbsp;•&nbsp; 1º Semestre 2026</p>
+        <p>Relatório de Fechamento</p>
       </div>
     </div>
     </div>
@@ -406,6 +407,7 @@ let charts = {};
 const MES_NUM={JANEIRO:1,FEVEREIRO:2,"MARÇO":3,MARCO:3,ABRIL:4,MAIO:5,JUNHO:6,JULHO:7,AGOSTO:8,SETEMBRO:9,OUTUBRO:10,NOVEMBRO:11,DEZEMBRO:12};
 
 function sorted(){return Object.keys(db).sort((a,b)=>db[a].mesNum-db[b].mesNum)}
+function getSemesterMonths(sem){return Object.keys(db).filter(k=> (db[k].sem||'2026/1')===sem ).sort((a,b)=> (db[a].mesNum%100) - (db[b].mesNum%100))}
 
 // ── Helpers ──
 const fmt=(n,d=2)=>n==null?"—":Number(n).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -422,7 +424,7 @@ function setSelectedSemester(sem){
   const capNote = document.querySelector('.header-meta .cap-note');
   if(badge) badge.textContent = sem==='2026/2' ? '2º SEM 2026' : '1º SEM 2026';
   if(capNote) capNote.textContent = sem==='2026/2' ? 'Teto semanal máximo: 14.089,50h' : 'Teto semanal máximo: 13.820h';
-  const available = Object.keys(db).filter(k=> (db[k].sem||'2026/1')===sem ).sort((a,b)=> (db[a].mesNum%100) - (db[b].mesNum%100));
+  const available = getSemesterMonths(sem);
   active = available.length ? available[0] : null;
   renderAll();
 }
@@ -542,7 +544,7 @@ function deleteMonth(m,event){
 
 function renderTabs(){
   const sem = getSelectedSemester();
-  const available = Object.keys(db).filter(k=> (db[k].sem||'2026/1')===sem ).sort((a,b)=> (db[a].mesNum%100) - (db[b].mesNum%100));
+  const available = getSemesterMonths(sem);
   document.getElementById("month-tabs").innerHTML=
     available.map(function(key){
       const delAttr = `onclick="deleteMonth('${key}', event)" title="Excluir ${db[key].mes}"`;
@@ -561,7 +563,7 @@ function renderContent(){
   }
   const d=db[active];
   const sem = getSelectedSemester();
-  const months=Object.keys(db).filter(k=> (db[k].sem||'2026/1')===sem ).sort((a,b)=> (db[a].mesNum%100) - (db[b].mesNum%100));
+  const months=getSemesterMonths(sem);
   const pi=months.indexOf(active);
   const prev=pi>0?db[months[pi-1]]:null;
   const first=db[months[0]];
@@ -634,7 +636,7 @@ function renderContent(){
       <div class="evo-months">
           ${months.map(m=>`<div class="evo-m${m===active?" active-m":""}">
           <div class="ml">${(db[m]&&db[m].mes?db[m].mes:m).slice(0,3)}</div>
-          <div class="mv">${fmt(db[m].grupos[g]||0,0)}</div>
+          <div class="mv">${fmt(db[m].grupos[g]||0)}</div>
         </div>`).join("")}
       </div>
     </div>`).join("")}
@@ -655,6 +657,7 @@ function renderContent(){
   ${months.length>1?`
   <div class="chart-card chart-line-full" style="margin-bottom:20px">
   <div class="chart-title">Evolução Total de Horas Semanais — ${dn(months[0])} a ${dn(months[months.length-1])}</div>
+  <div class="chart-note">Exibe a evolução das horas semanais registradas em cada mês do semestre.</div>
     <div class="chart-wrap" style="height:180px"><canvas id="c-line"></canvas></div>
   </div>`:""}
 
@@ -771,15 +774,10 @@ function renderContent(){
         {label:"Horas Semanais",data:months.map(m=>db[m].totalSemanal),
           borderColor:"#3A8EF6",backgroundColor:"rgba(58,142,246,0.06)",
           tension:0.35,fill:true,pointRadius:5,pointBackgroundColor:"#3A8EF6",
-          pointBorderColor:"#0F2040",pointBorderWidth:2,borderWidth:2},
-        {label:"Docentes × 20",data:months.map(m=>db[m].docentes*20),
-          borderColor:"#F5A800",backgroundColor:"transparent",
-          tension:0.35,fill:false,pointRadius:5,pointBackgroundColor:"#F5A800",
-          pointBorderColor:"#0F2040",pointBorderWidth:2,
-          borderWidth:2,borderDash:[5,4]}]},
+          pointBorderColor:"#0F2040",pointBorderWidth:2,borderWidth:2}]},
       options:{...gOpts,
         plugins:{...gOpts.plugins,
-          tooltip:{callbacks:{label:ctx=>ctx.datasetIndex===1?` Docentes: ${Math.round(ctx.raw/20)}`:` Horas: ${fmt(ctx.raw)}`}},
+          tooltip:{callbacks:{label:ctx=>` Horas: ${fmt(ctx.raw)}`}},
           legend:{position:"bottom",labels:{color:"#7A92B8",font:{family:"Inter",size:11},boxWidth:12}}},
         scales:{y:{grid:{color:"rgba(255,255,255,0.04)"},ticks:{color:"#7A92B8",font:{family:"Inter",size:11}}},
           x:{grid:{display:false},ticks:{color:"#7A92B8",font:{family:"Inter",size:11}}}}}});

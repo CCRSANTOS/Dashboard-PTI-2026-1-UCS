@@ -543,10 +543,9 @@ function deleteMonth(m,event){
 function renderTabs(){
   const sem = getSelectedSemester();
   const available = Object.keys(db).filter(k=> (db[k].sem||'2026/1')===sem ).sort((a,b)=> (db[a].mesNum%100) - (db[b].mesNum%100));
-  const disableAll = available.length<=1;
   document.getElementById("month-tabs").innerHTML=
     available.map(function(key){
-      const delAttr = disableAll ? 'disabled title="Não é possível excluir o último mês"' : `onclick="deleteMonth('${key}', event)" title="Excluir ${db[key].mes}"`;
+      const delAttr = `onclick="deleteMonth('${key}', event)" title="Excluir ${db[key].mes}"`;
       const semTag = db[key].sem ? ` (${db[key].sem})` : '';
       const label = `${db[key].mes}${semTag}`;
       return `<div class="tab-item${key===active?" active":""}"><button class="tab-btn${key===active?" active":""}" onclick="switchTo('${key}')">${label}</button><button class="tab-del" ${delAttr}>✖</button></div>`;

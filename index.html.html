@@ -277,6 +277,16 @@ main{position:relative;z-index:1}
   font-size:13px;box-shadow:0 8px 32px rgba(0,0,0,0.5);
   transform:translateY(80px);opacity:0;transition:all 0.3s;z-index:999;
 }
+#login-screen{display:none;position:fixed;inset:0;z-index:1400;align-items:center;justify-content:center;background:rgba(4,8,18,0.96);backdrop-filter:blur(4px)}
+#login-screen .login-box{width:360px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px 24px}
+#login-screen .login-box h2{font-size:18px;margin-bottom:8px}
+#login-screen .login-box p{font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6}
+#login-screen .login-row{display:flex;gap:10px;margin-bottom:12px}
+#login-screen input[type=text],#login-screen input[type=password]{flex:1;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:transparent;color:var(--text);font-size:14px}
+#login-screen button.btn-login{padding:12px 16px;border-radius:12px;border:none;background:var(--gold);color:var(--navy);font-weight:700;cursor:pointer}
+#login-screen .login-msg{margin-top:12px;font-size:12px;color:#FF6B5B;min-height:18px}
+body:not(.unlocked) #login-screen{display:flex}
+body:not(.unlocked) header,body:not(.unlocked) .upload-strip,body:not(.unlocked) .month-tabs,body:not(.unlocked) main,body:not(.unlocked) #drop-overlay{display:none !important}
 #pw-modal{display:none;position:fixed;inset:0;z-index:1200;align-items:center;justify-content:center}
 #pw-modal.show{display:flex}
 #pw-modal .pw-back{position:fixed;inset:0;background:rgba(4,8,18,0.6);backdrop-filter:blur(4px)}
@@ -318,6 +328,20 @@ main{position:relative;z-index:1}
   <span>Arquivos .xlsx do sistema PTI</span>
 </div>
 <div id="toast"></div>
+<div id="login-screen" aria-hidden="false">
+  <div class="login-box" role="dialog" aria-modal="true" aria-labelledby="login-title">
+    <h2 id="login-title">Acesso Restrito</h2>
+    <p>Informe seu usuário e senha para acessar o dashboard.</p>
+    <div class="login-row">
+      <input id="login-user" type="text" placeholder="Usuário" autocomplete="username" />
+    </div>
+    <div class="login-row">
+      <input id="login-input" type="password" placeholder="Senha" autocomplete="current-password" />
+      <button class="btn-login" id="login-submit">Entrar</button>
+    </div>
+    <div id="login-message" class="login-msg"></div>
+  </div>
+</div>
 <div id="pw-modal" aria-hidden="true">
   <div class="pw-back" onclick="closePwModal()"></div>
   <div class="pw-box" role="dialog" aria-modal="true" aria-labelledby="pw-title">
@@ -813,9 +837,42 @@ document.getElementById('pw-submit').addEventListener('click',()=>{
     const cb = _pwCallback; closePwModal(); if(typeof cb==='function') cb();
   }else{toast('Senha inválida.','err');document.getElementById('pw-input').focus();}
 });
+const AUTH_USER = 'ccrsantos';
+const AUTH_PASSWORD = 'ucs';
+let authenticated = false;
+
+function showLoginScreen(){
+  document.body.classList.add('locked');
+  document.getElementById('login-message').textContent = '';
+  const loginUser = document.getElementById('login-user');
+  const loginInput = document.getElementById('login-input');
+  loginUser.value = '';
+  loginInput.value = '';
+  setTimeout(()=>loginUser.focus(),50);
+}
+function hideLoginScreen(){
+  document.body.classList.remove('locked');
+  document.getElementById('login-screen').setAttribute('aria-hidden','true');
+}
+function login(){
+  const user = (document.getElementById('login-user').value || '').trim().toLowerCase();
+  const value = document.getElementById('login-input').value || '';
+  const msg = document.getElementById('login-message');
+  if(user === AUTH_USER && value === AUTH_PASSWORD){
+    authenticated = true;
+    document.body.classList.add('unlocked');
+    hideLoginScreen();
+    renderAll();
+    return;
+  }
+  msg.textContent = 'Usuário ou senha inválidos. Tente novamente.';
+  document.getElementById('login-user').focus();
+}
+document.getElementById('login-submit').addEventListener('click',login);
+document.getElementById('login-input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();login()}});
 document.getElementById('pw-input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('pw-submit').click()}});
 
-renderAll();
+showLoginScreen();
 </script>
 </body>
 </html>

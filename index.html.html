@@ -87,7 +87,10 @@ header{
   font-family:"Inter",sans-serif;
 }
 .btn-upload:hover{transform:translateY(-1px);box-shadow:0 0 32px rgba(245,168,0,0.45)}
-#file-input{display:none}
+.semester-switch{display:inline-flex;align-items:center;gap:8px;margin-left:12px}
+.semester-switch button{border:1px solid rgba(255,255,255,0.1);background:transparent;color:var(--text);font-size:12px;padding:8px 12px;border-radius:8px;cursor:pointer;transition:all 0.2s}
+.semester-switch button.active{background:rgba(245,168,0,0.16);border-color:rgba(245,168,0,0.3);color:#FFD860}
+.semester-switch button:hover{border-color:rgba(255,255,255,0.18)}
 #upload-status{font-size:11px;color:var(--gold);font-weight:500}
 
 /* Delete month button */
@@ -350,6 +353,10 @@ main{position:relative;z-index:1}
     <button class="btn-upload" onclick="document.getElementById('file-input').click()">
       ⬆&nbsp; Carregar novo mês
     </button>
+    <div id="semester-select" class="semester-switch" role="group" aria-label="Selecionar semestre">
+      <button type="button" class="active" data-sem="2026/1">1º sem 2026</button>
+      <button type="button" data-sem="2026/2">2º sem 2026</button>
+    </div>
     <input type="file" id="file-input" accept=".xlsx,.xls" multiple>
     <span id="upload-status"></span>
   </div>
@@ -403,6 +410,31 @@ function sorted(){return Object.keys(db).sort((a,b)=>db[a].mesNum-db[b].mesNum)}
 // ── Helpers ──
 const fmt=(n,d=2)=>n==null?"—":Number(n).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
 
+function getSelectedSemester(){
+  const btn = document.querySelector('#semester-select button.active');
+  return btn?.dataset?.sem || '2026/1';
+}
+function setSelectedSemester(sem){
+  document.querySelectorAll('#semester-select button').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.sem===sem);
+  });
+  const badge = document.querySelector('.header-meta .badge');
+  const capNote = document.querySelector('.header-meta .cap-note');
+  if(badge) badge.textContent = sem==='2026/2' ? '2º SEM 2026' : '1º SEM 2026';
+  if(capNote) capNote.textContent = sem==='2026/2' ? 'Teto semanal máximo: 14.089,50h' : 'Teto semanal máximo: 13.820h';
+  const available = Object.keys(db).filter(k=> (db[k].sem||'2026/1')===sem ).sort((a,b)=> (db[a].mesNum%100) - (db[b].mesNum%100));
+  active = available.length ? available[0] : null;
+  renderAll();
+}
+function findDbKeyFor(monthNum,sem){
+  return Object.keys(db).find(k=>{
+    const item = db[k];
+    const itemSem = item?.sem || '2026/1';
+    const base = item?.mesNum % 100 || item?.mesNum || 0;
+    return itemSem===sem && base===monthNum;
+  }) || null;
+}
+
 // ── Upload ──
 document.getElementById("file-input").addEventListener("change",e=>{
   const files=[...e.target.files]; e.target.value="";
@@ -415,6 +447,10 @@ document.addEventListener("drop",e=>{
   const files=[...e.dataTransfer.files].filter(f=>f.name.match(/\.xlsx?$/i));
   if(!files.length) return;
   requirePassword(()=>{ files.forEach(processFile); });
+});
+
+document.querySelectorAll('#semester-select button').forEach(btn=>{
+  btn.addEventListener('click',()=> setSelectedSemester(btn.dataset.sem));
 });
 
 function processFile(file){
@@ -445,7 +481,11 @@ function processFile(file){
       for(const k of Object.keys(MES_NUM)){if(fn.includes(k)||fn.includes(k.replace("Ç","C"))){mesNome=k==="MARCO"?"MARÇO":k;break}}
       if(!mesNome){const mc=data[0]?.MES_COMP;if(mc){const n=parseInt(mc);const f=Object.entries(MES_NUM).find(([,v])=>v===n);if(f)mesNome=f[0]==="MARCO"?"MARÇO":f[0]}}
       if(!mesNome)mesNome="MÊS "+(Object.keys(db).length+1);
-      const mesNum=MES_NUM[mesNome.toUpperCase().replace("Ç","C")]||Object.keys(db).length+1;
+      const mesNumBase=MES_NUM[mesNome.toUpperCase().replace("Ç","C")]||Object.keys(db).length+1;
+      const sem = getSelectedSemester();
+      // offset mesNum so second semester sorts after first semester
+      const mesNum = sem.includes('2') ? mesNumBase + 100 : mesNumBase;
+      const key = `${sem} | ${mesNome}`;
 
       const totalSemanal=data.reduce((s,r)=>s+pn(r["HORAS_SEMANAL"]),0);
       const totalMensal=data.reduce((s,r)=>s+pn(r["HORAS_MENSAL"]),0);
@@ -457,10 +497,10 @@ function processFile(file){
       const cursoMap={};data.forEach(r=>{const c=String(r["DESCCUSTO"]||"").trim();if(c)cursoMap[c]=(cursoMap[c]||0)+pn(r["HORAS_SEMANAL"])});
       const top10=Object.entries(cursoMap).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([k,v])=>[k,Math.round(v*100)/100]);
 
-      db[mesNome]={mes:mesNome,mesNum,totalSemanal:Math.round(totalSemanal*100)/100,totalMensal:Math.round(totalMensal*100)/100,
+      db[key]={mes:mesNome,sem:sem,mesNum,totalSemanal:Math.round(totalSemanal*100)/100,totalMensal:Math.round(totalMensal*100)/100,
         docentes:docSet.size,grupos:Object.fromEntries(Object.entries(grupos).map(([k,v])=>[k,Math.round(v*100)/100])),
         situacao,grupoAcad:Object.fromEntries(Object.entries(grupoAcad).sort((a,b)=>b[1]-a[1]).map(([k,v])=>[k,Math.round(v*100)/100])),top10};
-      active=mesNome;
+      active=key;
       st.textContent=`✅ ${mesNome} carregado`;
       document.getElementById("last-update").textContent="Atualizado em "+new Date().toLocaleDateString("pt-BR");
       renderAll();toast(`✅ ${mesNome} adicionado com sucesso!`,"ok");
@@ -501,36 +541,48 @@ function deleteMonth(m,event){
 }
 
 function renderTabs(){
-  const months=sorted();
-  const disableAll = months.length<=1;
+  const sem = getSelectedSemester();
+  const available = Object.keys(db).filter(k=> (db[k].sem||'2026/1')===sem ).sort((a,b)=> (db[a].mesNum%100) - (db[b].mesNum%100));
+  const disableAll = available.length<=1;
   document.getElementById("month-tabs").innerHTML=
-    months.map(function(m){
-      const delAttr = disableAll ? 'disabled title="Não é possível excluir o último mês"' : `onclick="deleteMonth('${m}', event)" title="Excluir ${m}"`;
-      return `<div class="tab-item${m===active?" active":""}"><button class="tab-btn${m===active?" active":""}" onclick="switchTo('${m}')">${m}</button><button class="tab-del" ${delAttr}>✖</button></div>`;
+    available.map(function(key){
+      const delAttr = disableAll ? 'disabled title="Não é possível excluir o último mês"' : `onclick="deleteMonth('${key}', event)" title="Excluir ${db[key].mes}"`;
+      const semTag = db[key].sem ? ` (${db[key].sem})` : '';
+      const label = `${db[key].mes}${semTag}`;
+      return `<div class="tab-item${key===active?" active":""}"><button class="tab-btn${key===active?" active":""}" onclick="switchTo('${key}')">${label}</button><button class="tab-del" ${delAttr}>✖</button></div>`;
     }).join("")+`<span class="tab-hint">← Carregue novos meses acima</span>`;
 }
 
 function switchTo(m){active=m;renderTabs();renderContent()}
 
 function renderContent(){
+  if(!active || !db[active]){
+    document.getElementById('main-content').innerHTML = '<div class="loading"><p>Sem dados para o semestre selecionado.</p></div>';
+    return;
+  }
   const d=db[active];
-  const months=sorted();
+  const sem = getSelectedSemester();
+  const months=Object.keys(db).filter(k=> (db[k].sem||'2026/1')===sem ).sort((a,b)=> (db[a].mesNum%100) - (db[b].mesNum%100));
   const pi=months.indexOf(active);
   const prev=pi>0?db[months[pi-1]]:null;
   const first=db[months[0]];
 
+  const dn = m => (db[m] && db[m].sem) ? `${db[m].mes} (${db[m].sem})` : (db[m] && db[m].mes) ? db[m].mes : m;
+
   function trend(cur,ref){
     if(!ref||ref===cur)return`<span class="kpi-trend na">— mesmo período</span>`;
     const p=((cur-ref)/ref*100),up=p>=0;
-    return`<span class="kpi-trend ${up?"up":"dn"}">${up?"▲":"▼"} ${Math.abs(p).toFixed(2)}% vs ${months[pi-1]}</span>`;
+    return`<span class="kpi-trend ${up?"up":"dn"}">${up?"▲":"▼"} ${Math.abs(p).toFixed(2)}% vs ${dn(months[pi-1])}</span>`;
   }
   const growthVal=first&&first!==d?((d.totalSemanal-first.totalSemanal)/first.totalSemanal*100):null;
-  const capWeekly=13820;
+  const capWeekly = getSelectedSemester()==='2026/2' ? 14089.5 : 13820;
   const capUsage=Number((d.totalSemanal/capWeekly*100).toFixed(2));
   const capRemaining=Math.max(0,capWeekly-d.totalSemanal);
 
   const GRPS=["PRESENCIAL","DIGITAL","ODONTOLOGIA","STRICTO"];
   const GCOLS=["#1565D8","#F5A800","#00A89D","#9B59B6"];
+
+
 
   document.getElementById("main-content").innerHTML=`
 
@@ -540,14 +592,14 @@ function renderContent(){
       <div class="kpi-icon-bg">⏱</div>
       <div class="kpi-label">Horas Semanais</div>
       <div class="kpi-value">${fmt(d.totalSemanal)}</div>
-      <div class="kpi-sub">${active} 2026</div>
+      <div class="kpi-sub">${dn(active)} 2026</div>
       ${trend(d.totalSemanal,prev?.totalSemanal)}
     </div>
     <div class="kpi-card">
       <div class="kpi-icon-bg">📅</div>
       <div class="kpi-label">Horas Mensais</div>
       <div class="kpi-value">${fmt(d.totalMensal)}</div>
-      <div class="kpi-sub">${active} 2026</div>
+      <div class="kpi-sub">${dn(active)} 2026</div>
       ${trend(d.totalMensal,prev?.totalMensal)}
     </div>
     <div class="kpi-card">
@@ -561,7 +613,7 @@ function renderContent(){
       <div class="kpi-icon-bg">📈</div>
       <div class="kpi-label">Crescimento Semestral</div>
       <div class="kpi-value">${growthVal!=null?Math.abs(growthVal).toFixed(2)+"%":"—"}</div>
-      <div class="kpi-sub">vs. ${months[0]} (início)</div>
+      <div class="kpi-sub">vs. ${dn(months[0])} (início)</div>
       ${growthVal!=null?`<span class="kpi-trend ${growthVal>=0?"up":"dn"}">${growthVal>=0?"▲":"▼"} acumulado no semestre</span>`:""}
     </div>
     <div class="kpi-card" style="grid-column:span 1;">
@@ -575,14 +627,14 @@ function renderContent(){
 
   ${months.length>1?`
   <!-- Evolução por grupo -->
-  <div class="sec-label">Evolução por Grupo — ${months[0]} a ${months[months.length-1]}</div>
+  <div class="sec-label">Evolução por Grupo — ${dn(months[0])} a ${dn(months[months.length-1])}</div>
   <div class="evo-grid">
     ${GRPS.map((g,i)=>`
     <div class="evo-card" style="--c:${GCOLS[i]}">
       <div class="evo-name">${g}</div>
       <div class="evo-months">
-        ${months.map(m=>`<div class="evo-m${m===active?" active-m":""}">
-          <div class="ml">${m.slice(0,3)}</div>
+          ${months.map(m=>`<div class="evo-m${m===active?" active-m":""}">
+          <div class="ml">${(db[m]&&db[m].mes?db[m].mes:m).slice(0,3)}</div>
           <div class="mv">${fmt(db[m].grupos[g]||0,0)}</div>
         </div>`).join("")}
       </div>
@@ -592,25 +644,25 @@ function renderContent(){
   <!-- Charts row 1 -->
   <div class="charts-row" style="margin-bottom:16px">
     <div class="chart-card">
-      <div class="chart-title">Distribuição por Grupo — ${active}</div>
+      <div class="chart-title">Distribuição por Grupo — ${dn(active)}</div>
       <div class="chart-wrap"><canvas id="c-donut"></canvas></div>
     </div>
     <div class="chart-card">
-      <div class="chart-title">Situação dos Registros — ${active}</div>
+      <div class="chart-title">Situação dos Registros — ${dn(active)}</div>
       <div class="chart-wrap"><canvas id="c-sit"></canvas></div>
     </div>
   </div>
 
   ${months.length>1?`
   <div class="chart-card chart-line-full" style="margin-bottom:20px">
-    <div class="chart-title">Evolução Total de Horas Semanais — ${months[0]} a ${months[months.length-1]}</div>
+  <div class="chart-title">Evolução Total de Horas Semanais — ${dn(months[0])} a ${dn(months[months.length-1])}</div>
     <div class="chart-wrap" style="height:180px"><canvas id="c-line"></canvas></div>
   </div>`:""}
 
   <!-- Tables -->
   <div class="tables-row">
     <div class="tbl-card">
-      <div class="sec-label" style="margin-bottom:12px">Grupos Acadêmicos — ${active}</div>
+      <div class="sec-label" style="margin-bottom:12px">Grupos Acadêmicos — ${dn(active)}</div>
       <table>
         <thead><tr><th>Grupo</th><th>Hrs Sem.</th><th>%</th></tr></thead>
         <tbody>
@@ -630,7 +682,7 @@ function renderContent(){
       </table>
     </div>
     <div class="tbl-card">
-      <div class="sec-label" style="margin-bottom:12px">Situação dos Registros — ${active}</div>
+      <div class="sec-label" style="margin-bottom:12px">Situação dos Registros — ${dn(active)}</div>
       <table>
         <thead><tr><th>Situação</th><th>Registros</th><th>%</th></tr></thead>
         <tbody>
@@ -657,7 +709,7 @@ function renderContent(){
 
   <!-- Top 10 -->
   <div class="tbl-card">
-    <div class="sec-label" style="margin-bottom:12px">Top 10 Cursos por Horas Semanais — ${active}</div>
+    <div class="sec-label" style="margin-bottom:12px">Top 10 Cursos por Horas Semanais — ${dn(active)}</div>
     <table>
       <thead><tr><th>#</th><th>Curso / Centro de Custo</th><th>Horas Semanais</th><th>% do Top 10</th></tr></thead>
       <tbody>
@@ -716,7 +768,7 @@ function renderContent(){
   const lc=document.getElementById("c-line");
   if(lc&&months.length>1){
     charts.line=new Chart(lc,{type:"line",
-      data:{labels:months,datasets:[
+      data:{labels:months.map(m=>dn(m)),datasets:[
         {label:"Horas Semanais",data:months.map(m=>db[m].totalSemanal),
           borderColor:"#3A8EF6",backgroundColor:"rgba(58,142,246,0.06)",
           tension:0.35,fill:true,pointRadius:5,pointBackgroundColor:"#3A8EF6",

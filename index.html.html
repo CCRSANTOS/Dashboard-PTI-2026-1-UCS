@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard PTI — Universidade Cruzeiro do Sul</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --navy:   #081428;
+  --navy2:  #0D1E3A;
+  --blue:   #0A2B6E;
+  --mid:    #1565D8;
+  --sky:    #3A8EF6;
+  --teal:   #00A89D;
+  --gold:   #F5A800;
+  --gold2:  #FFD060;
+  --bg:     #060F1E;
+  --bg2:    #0B1A30;
+  --card:   #0F2040;
+  --card2:  #122448;
+  --border: rgba(255,255,255,0.07);
+  --text:   #E8EEF8;
+  --muted:  #7A92B8;
+  --radius: 14px;
+  --glow-gold: 0 0 24px rgba(245,168,0,0.25);
+  --glow-blue: 0 0 24px rgba(21,101,216,0.3);
+}
+
+body{font-family:"Inter",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ─ Scrollbar ─ */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--navy2)}
+::-webkit-scrollbar-thumb{background:var(--blue);border-radius:3px}
+
+/* ─ Header ─ */
+header{
+  background:linear-gradient(180deg,var(--navy) 0%,var(--navy2) 100%);
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:200;
+}
+.header-top{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 32px;gap:16px;
+  border-bottom:1px solid var(--border);
+}
+.brand{display:flex;align-items:center;gap:0}
+.brand img{height:72px;width:auto;object-fit:contain;filter:drop-shadow(0 0 14px rgba(245,168,0,0.5)) drop-shadow(0 0 28px rgba(245,168,0,0.2))}
+.brand-divider{width:1px;height:44px;background:rgba(255,255,255,0.12);margin:0 18px}
+.brand-text h1{
+  font-family:"Montserrat",sans-serif;font-size:14px;font-weight:700;
+  color:#fff;letter-spacing:0.4px;white-space:nowrap;
+}
+.brand-text p{font-size:11px;color:var(--muted);margin-top:2px}
+.header-meta{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.badge{
+  background:rgba(245,168,0,0.12);border:1px solid rgba(245,168,0,0.3);
+  color:var(--gold);padding:5px 13px;border-radius:20px;font-size:11px;font-weight:600;
+  letter-spacing:0.3px;
+}
+.cap-note{
+  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
+  color:var(--text);padding:6px 12px;border-radius:20px;font-size:11px;font-weight:600;
+  letter-spacing:0.2px;
+}
+#last-update{font-size:11px;color:var(--muted)}
+
+/* ─ Upload strip ─ */
+.upload-strip{
+  background:linear-gradient(90deg,rgba(21,101,216,0.15) 0%,rgba(0,168,157,0.08) 100%);
+  border-bottom:1px solid var(--border);
+  padding:9px 32px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.upload-strip p{font-size:12px;color:var(--muted)}
+.upload-strip p strong{color:var(--text)}
+.btn-upload{
+  display:flex;align-items:center;gap:7px;
+  background:linear-gradient(135deg,var(--gold) 0%,#FFBC20 100%);
+  color:var(--navy);font-weight:700;font-size:12px;
+  border:none;padding:7px 18px;border-radius:7px;cursor:pointer;
+  box-shadow:var(--glow-gold);transition:all 0.2s;white-space:nowrap;
+  font-family:"Inter",sans-serif;
+}
+.btn-upload:hover{transform:translateY(-1px);box-shadow:0 0 32px rgba(245,168,0,0.45)}
+#file-input{display:none}
+#upload-status{font-size:11px;color:var(--gold);font-weight:500}
+
+/* ─ Month tabs ─ */
+.month-tabs{
+  display:flex;align-items:center;
+  padding:0 32px;background:var(--navy);
+  border-bottom:1px solid var(--border);overflow-x:auto;
+}
+.tab-btn{
+  padding:11px 22px;border:none;background:transparent;
+  color:var(--muted);font-size:13px;font-weight:500;
+  cursor:pointer;border-bottom:3px solid transparent;
+  transition:all 0.2s;white-space:nowrap;font-family:"Inter",sans-serif;
+  letter-spacing:0.2px;
+}
+.tab-btn:hover{color:rgba(255,255,255,0.8)}
+.tab-btn.active{color:#fff;border-bottom-color:var(--gold);font-weight:600}
+.tab-hint{margin-left:auto;font-size:11px;color:rgba(255,255,255,0.18);padding:11px 0;white-space:nowrap}
+
+/* ─ Main ─ */
+main{padding:24px 32px 48px;max-width:1440px;margin:0 auto}
+
+/* ─ KPIs ─ */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.kpi-card{
+  background:var(--card);border-radius:var(--radius);
+  padding:22px 22px 18px;
+  border:1px solid var(--border);
+  position:relative;overflow:hidden;
+  transition:transform 0.2s,box-shadow 0.2s;
+  cursor:default;
+}
+.kpi-card::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--c1,var(--mid)),var(--c2,var(--sky)));
+}
+.kpi-card:nth-child(1){--c1:#1565D8;--c2:#3A8EF6}
+.kpi-card:nth-child(2){--c1:#00A89D;--c2:#00D4C8}
+.kpi-card:nth-child(3){--c1:#9B59B6;--c2:#C77DFF}
+.kpi-card:nth-child(4){--c1:#F5A800;--c2:#FFD060}
+.kpi-card::after{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(ellipse at 110% -10%,rgba(255,255,255,0.03) 0%,transparent 60%);
+  pointer-events:none;
+}
+.kpi-card:hover{transform:translateY(-3px);box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.kpi-icon-bg{
+  position:absolute;right:14px;top:14px;
+  font-size:32px;opacity:0.07;
+}
+.kpi-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.kpi-value{
+  font-family:"Montserrat",sans-serif;font-size:36px;font-weight:800;
+  color:#fff;margin:8px 0 2px;line-height:1;
+}
+.kpi-sub{font-size:11px;color:var(--muted);margin-bottom:8px}
+.kpi-trend{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;
+  padding:3px 8px;border-radius:6px;}
+.kpi-trend.up{background:rgba(0,168,157,0.12);color:#00D4C8}
+.kpi-trend.dn{background:rgba(217,79,61,0.12);color:#FF6B5B}
+.kpi-trend.na{background:rgba(255,255,255,0.05);color:var(--muted)}
+
+/* ─ Section label ─ */
+.sec-label{
+  display:flex;align-items:center;gap:10px;
+  font-family:"Montserrat",sans-serif;font-size:12px;font-weight:700;
+  color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;
+  margin-bottom:14px;
+}
+.sec-label::before{content:"";width:3px;height:14px;border-radius:2px;
+  background:linear-gradient(180deg,var(--gold),var(--teal));flex-shrink:0}
+
+/* ─ Chart cards ─ */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.chart-card{
+  background:var(--card);border-radius:var(--radius);
+  padding:20px 22px;border:1px solid var(--border);
+}
+.chart-title{font-size:12px;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:0.8px;margin-bottom:16px}
+.chart-wrap{position:relative;height:220px}
+.chart-line-full{grid-column:1/-1}
+
+/* ─ Evo cards ─ */
+.evo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.evo-card{
+  background:var(--card);border-radius:var(--radius);
+  padding:16px 18px;border:1px solid var(--border);
+  border-left:3px solid var(--c,var(--mid));
+}
+.evo-card:nth-child(1){--c:var(--mid)}
+.evo-card:nth-child(2){--c:var(--gold)}
+.evo-card:nth-child(3){--c:var(--teal)}
+.evo-card:nth-child(4){--c:#9B59B6}
+.evo-name{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px}
+.evo-months{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.evo-m{text-align:center;flex:1;min-width:44px;
+  background:rgba(255,255,255,0.03);border-radius:8px;padding:6px 4px}
+.evo-m .ml{font-size:9px;color:var(--muted);margin-bottom:3px}
+.evo-m .mv{font-size:12px;font-weight:700;color:#fff}
+.evo-m.active-m{background:rgba(245,168,0,0.1);border:1px solid rgba(245,168,0,0.2)}
+.evo-m.active-m .mv{color:var(--gold)}
+
+/* ─ Tables row ─ */
+.tables-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.tbl-card{
+  background:var(--card);border-radius:var(--radius);
+  padding:20px 22px;border:1px solid var(--border);overflow:hidden;
+}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead th{
+  background:rgba(255,255,255,0.04);color:var(--muted);
+  padding:9px 12px;text-align:left;font-size:10px;
+  font-weight:700;text-transform:uppercase;letter-spacing:0.7px;
+  border-bottom:1px solid var(--border);
+}
+thead th:not(:first-child){text-align:right}
+tbody tr{border-bottom:1px solid rgba(255,255,255,0.04);transition:background 0.15s}
+tbody tr:hover{background:rgba(255,255,255,0.03)}
+tbody td{padding:9px 12px;color:var(--text)}
+tbody td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
+tr.trow-total td{color:var(--gold);font-weight:700;background:rgba(245,168,0,0.05)}
+
+/* ─ Pill badges ─ */
+.pill{display:inline-flex;align-items:center;gap:5px;
+  padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.pill-saldo{background:rgba(0,168,157,0.15);color:#00D4C8}
+.pill-alt{background:rgba(245,168,0,0.12);color:var(--gold)}
+
+/* ─ Progress ─ */
+.pbar{background:rgba(255,255,255,0.07);border-radius:4px;height:5px;overflow:hidden;width:60px}
+.pfill{height:100%;border-radius:4px;background:var(--mid)}
+
+/* ─ Top cursos ─ */
+.rank{display:inline-flex;align-items:center;justify-content:center;
+  width:22px;height:22px;border-radius:6px;
+  background:rgba(245,168,0,0.15);color:var(--gold);
+  font-size:11px;font-weight:700}
+
+/* ─ Watermark wave background ─ */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 80% 50% at 15% 90%,rgba(21,101,216,0.06) 0%,transparent 60%),
+    radial-gradient(ellipse 60% 40% at 85% 10%,rgba(0,168,157,0.05) 0%,transparent 55%),
+    radial-gradient(ellipse 50% 50% at 50% 50%,rgba(245,168,0,0.02) 0%,transparent 70%);
+}
+main{position:relative;z-index:1}
+
+/* ─ Drop overlay ─ */
+#drop-overlay{
+  display:none;position:fixed;inset:0;z-index:999;
+  background:rgba(8,20,40,0.88);backdrop-filter:blur(4px);
+  align-items:center;justify-content:center;
+  flex-direction:column;gap:16px;
+  border:3px dashed var(--gold);
+  pointer-events:none;
+}
+#drop-overlay.show{display:flex}
+#drop-overlay p{font-family:"Montserrat",sans-serif;font-size:22px;font-weight:700;color:var(--gold)}
+#drop-overlay span{font-size:13px;color:var(--muted)}
+
+/* ─ Toast ─ */
+#toast{
+  position:fixed;bottom:24px;right:24px;
+  background:var(--card2);border:1px solid var(--border);
+  color:var(--text);padding:13px 20px;border-radius:10px;
+  font-size:13px;box-shadow:0 8px 32px rgba(0,0,0,0.5);
+  transform:translateY(80px);opacity:0;transition:all 0.3s;z-index:999;
+}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.ok{border-left:4px solid var(--teal)}
+#toast.err{border-left:4px solid #D94F3D}
+
+/* ─ Loading ─ */
+.loading{text-align:center;padding:80px 40px;color:var(--muted)}
+.spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.08);
+  border-top-color:var(--gold);border-radius:50%;
+  animation:spin 0.8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ─ Responsive ─ */
+@media(max-width:960px){
+  main{padding:16px}
+  .kpi-grid,.evo-grid{grid-template-columns:repeat(2,1fr)}
+  .charts-row,.tables-row{grid-template-columns:1fr}
+  .header-top,.upload-strip,.month-tabs{padding-left:16px;padding-right:16px}
+}
+@media(max-width:520px){
+  .kpi-grid,.evo-grid{grid-template-columns:1fr}
+  .brand img{height:52px}
+}
+</style>
+</head>
+<body>
+
+<div id="drop-overlay">
+  <p>📂 Solte o arquivo aqui</p>
+  <span>Arquivos .xlsx do sistema PTI</span>
+</div>
+<div id="toast"></div>
+
+<header>
+  <div class="header-top">
+    <div class="brand">
+      <img src="logo.png" alt="Logo PTI" />
+      <div class="brand-divider"></div>
+      <div class="brand-text">
+        <h1>Dashboard Gerencial PTI</h1>
+        <p>Relatório de Fechamento &nbsp;•&nbsp; 1º Semestre 2026</p>
+      </div>
+    </div>
+    </div>
+    <div class="header-meta">
+      <span class="badge">1º SEM 2026</span>
+      <span class="cap-note">Teto semanal máximo: 13.820h</span>
+      <span id="last-update">Atualizado em 19/06/2026</span>
+    </div>
+  </div>
+
+  <div class="upload-strip">
+    <p><strong>Atualização mensal:</strong> carregue o arquivo .xlsx exportado do sistema PTI para adicionar um novo mês</p>
+    <button class="btn-upload" onclick="document.getElementById('file-input').click()">
+      ⬆&nbsp; Carregar novo mês
+    </button>
+    <input type="file" id="file-input" accept=".xlsx,.xls" multiple>
+    <span id="upload-status"></span>
+  </div>
+
+  <div class="month-tabs" id="month-tabs"></div>
+</header>
+
+<main id="main-content">
+  <div class="loading"><div class="spinner"></div><p>Carregando dashboard...</p></div>
+</main>
+
+<script>
+// ══════════════════════════════════════════════
+// DADOS SEED — Março a Junho 2026
+// ══════════════════════════════════════════════
+const SEED = {
+  "MARÇO":{mes:"MARÇO",mesNum:3,
+    totalSemanal:13552.86,totalMensal:60988.02,docentes:583,
+    grupos:{DIGITAL:1217.02,ODONTOLOGIA:1674.47,PRESENCIAL:9704.81,STRICTO:956.56},
+    situacao:{Saldo:2549,Alterado:2144},
+    grupoAcad:{"AULAS NA GRADUAÇÃO":7565.0,"ATENDIMENTO AO ALUNO":2117.78,"PRÓ-REITORIA DE GRADUAÇÃO":1471.5,"PRÓ-REITORIA DE GRADUAÇÃO À DISTÂNCIA":1217.02,"PÓS GRADUAÇÃO, PESQUISA E EXTENSÃO":956.56,"REITORIA":225.0},
+    top10:[["Curso de Psicologia - Presencial",1982.46],["Curso de Odontologia - Presencial",1674.47],["Curso de Enfermagem - Presencial",1111.75],["Curso de Direito - Presencial",851.45],["Curso de Medicina Veterinária - Presencial",714.9],["CBS - SEMIPRESENCIAL",598.87],["Curso de Fisioterapia - Presencial",493.88],["CST em Análise e Desenvolvimento de Sistemas - Presencial",479.13],["Curso de Biomedicina - Presencial",425.35],["Mestrado Interdisciplinar em Ciências da Saúde",358.0]]},
+  "ABRIL":{mes:"ABRIL",mesNum:4,
+    totalSemanal:13674.07,totalMensal:61533.49,docentes:584,
+    grupos:{DIGITAL:1247.73,ODONTOLOGIA:1675.61,PRESENCIAL:9794.17,STRICTO:956.56},
+    situacao:{Saldo:3508,Alterado:1235},
+    grupoAcad:{"AULAS NA GRADUAÇÃO":7622.5,"ATENDIMENTO AO ALUNO":2149.78,"PRÓ-REITORIA DE GRADUAÇÃO":1472.5,"PRÓ-REITORIA DE GRADUAÇÃO À DISTÂNCIA":1247.73,"PÓS GRADUAÇÃO, PESQUISA E EXTENSÃO":956.56,"REITORIA":225.0},
+    top10:[["Curso de Psicologia - Presencial",2056.17],["Curso de Odontologia - Presencial",1675.61],["Curso de Enfermagem - Presencial",1121.47],["Curso de Direito - Presencial",836.68],["Curso de Medicina Veterinária - Presencial",717.97],["CBS - SEMIPRESENCIAL",604.9],["Curso de Fisioterapia - Presencial",503.48],["CST em Análise e Desenvolvimento de Sistemas - Presencial",482.68],["Curso de Biomedicina - Presencial",428.36],["Curso Administração - Presencial",354.97]]},
+  "MAIO":{mes:"MAIO",mesNum:5,
+    totalSemanal:13798.24,totalMensal:62092.26,docentes:585,
+    grupos:{DIGITAL:1322.51,ODONTOLOGIA:1675.64,PRESENCIAL:9843.53,STRICTO:956.56},
+    situacao:{Saldo:4282,Alterado:521},
+    grupoAcad:{"AULAS NA GRADUAÇÃO":7661.39,"ATENDIMENTO AO ALUNO":2160.28,"PRÓ-REITORIA DE GRADUAÇÃO":1472.5,"PRÓ-REITORIA DE GRADUAÇÃO À DISTÂNCIA":1322.51,"PÓS GRADUAÇÃO, PESQUISA E EXTENSÃO":956.56,"REITORIA":225.0},
+    top10:[["Curso de Psicologia - Presencial",2058.03],["Curso de Odontologia - Presencial",1675.64],["Curso de Enfermagem - Presencial",1135.67],["Curso de Direito - Presencial",836.84],["Curso de Medicina Veterinária - Presencial",719.11],["CBS - SEMIPRESENCIAL",615.68],["Curso de Fisioterapia - Presencial",507.24],["CST em Análise e Desenvolvimento de Sistemas - Presencial",480.21],["Curso de Biomedicina - Presencial",442.59],["Curso Administração - Presencial",354.94]]},
+  "JUNHO":{mes:"JUNHO",mesNum:6,
+    totalSemanal:13818.63,totalMensal:62184.02,docentes:585,
+    grupos:{DIGITAL:1331.4,ODONTOLOGIA:1675.54,PRESENCIAL:9855.13,STRICTO:956.56},
+    situacao:{Saldo:4673,Alterado:131},
+    grupoAcad:{"AULAS NA GRADUAÇÃO":7649.39,"ATENDIMENTO AO ALUNO":2171.78,"PRÓ-REITORIA DE GRADUAÇÃO":1484.5,"PRÓ-REITORIA DE GRADUAÇÃO À DISTÂNCIA":1331.4,"PÓS GRADUAÇÃO, PESQUISA E EXTENSÃO":956.56,"REITORIA":225.0},
+    top10:[["Curso de Psicologia - Presencial",2057.35],["Curso de Odontologia - Presencial",1675.54],["Curso de Enfermagem - Presencial",1135.74],["Curso de Direito - Presencial",836.83],["Curso de Medicina Veterinária - Presencial",719.02],["CBS - SEMIPRESENCIAL",624.57],["Curso de Fisioterapia - Presencial",507.23],["CST em Análise e Desenvolvimento de Sistemas - Presencial",480.6],["Curso de Biomedicina - Presencial",442.53],["Curso Administração - Presencial",354.56]]}
+};
+
+// ── State ──
+let db = {...SEED};
+let active = "JUNHO";
+let charts = {};
+const MES_NUM={JANEIRO:1,FEVEREIRO:2,"MARÇO":3,MARCO:3,ABRIL:4,MAIO:5,JUNHO:6,JULHO:7,AGOSTO:8,SETEMBRO:9,OUTUBRO:10,NOVEMBRO:11,DEZEMBRO:12};
+
+function sorted(){return Object.keys(db).sort((a,b)=>db[a].mesNum-db[b].mesNum)}
+
+// ── Helpers ──
+const fmt=(n,d=2)=>n==null?"—":Number(n).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
+
+// ── Upload ──
+document.getElementById("file-input").addEventListener("change",e=>{
+  [...e.target.files].forEach(processFile); e.target.value="";
+});
+document.addEventListener("dragover",e=>{e.preventDefault();document.getElementById("drop-overlay").classList.add("show")});
+document.addEventListener("dragleave",e=>{if(!e.relatedTarget)document.getElementById("drop-overlay").classList.remove("show")});
+document.addEventListener("drop",e=>{
+  e.preventDefault();document.getElementById("drop-overlay").classList.remove("show");
+  [...e.dataTransfer.files].filter(f=>f.name.match(/\.xlsx?$/i)).forEach(processFile);
+});
+
+function processFile(file){
+  const st=document.getElementById("upload-status");
+  st.textContent=`⏳ Processando ${file.name}...`;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const wb=XLSX.read(ev.target.result,{type:"array"});
+      const sn=wb.SheetNames.find(s=>s.toLowerCase().includes("relat"))||wb.SheetNames[0];
+      const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:""});
+      let hi=-1;
+      for(let i=0;i<Math.min(10,rows.length);i++){
+        const r=rows[i].map(c=>String(c).trim().toUpperCase());
+        if(r.includes("DOCENTE")&&r.includes("HORAS_SEMANAL")){hi=i;break}
+      }
+      if(hi<0) throw new Error("Cabeçalho PTI não encontrado.");
+      const headers=rows[hi].map(c=>String(c).trim());
+      const data=rows.slice(hi+1).filter(r=>r.some(c=>c!=="")).map(r=>{
+        const o={};headers.forEach((h,i)=>{o[h]=r[i]??""});return o;
+      });
+      if(!data.length) throw new Error("Nenhum registro encontrado.");
+      const pn=v=>{if(typeof v==="number")return v;return parseFloat(String(v).replace(/\s/g,"").replace(",","."))||0};
+      
+      // detect month
+      let mesNome="";
+      const fn=file.name.toUpperCase().replace(/[_.\-]/g," ");
+      for(const k of Object.keys(MES_NUM)){if(fn.includes(k)||fn.includes(k.replace("Ç","C"))){mesNome=k==="MARCO"?"MARÇO":k;break}}
+      if(!mesNome){const mc=data[0]?.MES_COMP;if(mc){const n=parseInt(mc);const f=Object.entries(MES_NUM).find(([,v])=>v===n);if(f)mesNome=f[0]==="MARCO"?"MARÇO":f[0]}}
+      if(!mesNome)mesNome="MÊS "+(Object.keys(db).length+1);
+      const mesNum=MES_NUM[mesNome.toUpperCase().replace("Ç","C")]||Object.keys(db).length+1;
+
+      const totalSemanal=data.reduce((s,r)=>s+pn(r["HORAS_SEMANAL"]),0);
+      const totalMensal=data.reduce((s,r)=>s+pn(r["HORAS_MENSAL"]),0);
+      const docSet=new Set(data.map(r=>r["ID_PROFESSOR"]).filter(Boolean));
+      const grupos={};data.forEach(r=>{const g=String(r["Coluna1"]||"").trim();if(g)grupos[g]=(grupos[g]||0)+pn(r["HORAS_SEMANAL"])});
+      const situacao={Saldo:0,Alterado:0};
+      data.forEach(r=>{const s=String(r["SITUACAO"]||"").trim();if(s==="Saldo")situacao.Saldo++;else if(s.includes("Alterado"))situacao.Alterado++});
+      const grupoAcad={};data.forEach(r=>{const g=String(r["GRUPO"]||"").trim();if(g)grupoAcad[g]=(grupoAcad[g]||0)+pn(r["HORAS_SEMANAL"])});
+      const cursoMap={};data.forEach(r=>{const c=String(r["DESCCUSTO"]||"").trim();if(c)cursoMap[c]=(cursoMap[c]||0)+pn(r["HORAS_SEMANAL"])});
+      const top10=Object.entries(cursoMap).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([k,v])=>[k,Math.round(v*100)/100]);
+
+      db[mesNome]={mes:mesNome,mesNum,totalSemanal:Math.round(totalSemanal*100)/100,totalMensal:Math.round(totalMensal*100)/100,
+        docentes:docSet.size,grupos:Object.fromEntries(Object.entries(grupos).map(([k,v])=>[k,Math.round(v*100)/100])),
+        situacao,grupoAcad:Object.fromEntries(Object.entries(grupoAcad).sort((a,b)=>b[1]-a[1]).map(([k,v])=>[k,Math.round(v*100)/100])),top10};
+      active=mesNome;
+      st.textContent=`✅ ${mesNome} carregado`;
+      document.getElementById("last-update").textContent="Atualizado em "+new Date().toLocaleDateString("pt-BR");
+      renderAll();toast(`✅ ${mesNome} adicionado com sucesso!`,"ok");
+      setTimeout(()=>{st.textContent=""},4000);
+    }catch(err){st.textContent="";toast("❌ "+err.message,"err")}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ── Render ──
+function renderAll(){renderTabs();renderContent()}
+
+function renderTabs(){
+  const months=sorted();
+  document.getElementById("month-tabs").innerHTML=
+    months.map(m=>`<button class="tab-btn${m===active?" active":""}" onclick="switchTo('${m}')">${m}</button>`).join("")+
+    `<span class="tab-hint">← Carregue novos meses acima</span>`;
+}
+
+function switchTo(m){active=m;renderTabs();renderContent()}
+
+function renderContent(){
+  const d=db[active];
+  const months=sorted();
+  const pi=months.indexOf(active);
+  const prev=pi>0?db[months[pi-1]]:null;
+  const first=db[months[0]];
+
+  function trend(cur,ref){
+    if(!ref||ref===cur)return`<span class="kpi-trend na">— mesmo período</span>`;
+    const p=((cur-ref)/ref*100),up=p>=0;
+    return`<span class="kpi-trend ${up?"up":"dn"}">${up?"▲":"▼"} ${Math.abs(p).toFixed(2)}% vs ${months[pi-1]}</span>`;
+  }
+  const growthVal=first&&first!==d?((d.totalSemanal-first.totalSemanal)/first.totalSemanal*100):null;
+  const capWeekly=13820;
+  const capUsage=Number((d.totalSemanal/capWeekly*100).toFixed(2));
+  const capRemaining=Math.max(0,capWeekly-d.totalSemanal);
+
+  const GRPS=["PRESENCIAL","DIGITAL","ODONTOLOGIA","STRICTO"];
+  const GCOLS=["#1565D8","#F5A800","#00A89D","#9B59B6"];
+
+  document.getElementById("main-content").innerHTML=`
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon-bg">⏱</div>
+      <div class="kpi-label">Horas Semanais</div>
+      <div class="kpi-value">${fmt(d.totalSemanal)}</div>
+      <div class="kpi-sub">${active} 2026</div>
+      ${trend(d.totalSemanal,prev?.totalSemanal)}
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon-bg">📅</div>
+      <div class="kpi-label">Horas Mensais</div>
+      <div class="kpi-value">${fmt(d.totalMensal)}</div>
+      <div class="kpi-sub">${active} 2026</div>
+      ${trend(d.totalMensal,prev?.totalMensal)}
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon-bg">👩‍🏫</div>
+      <div class="kpi-label">Docentes Ativos</div>
+      <div class="kpi-value">${fmt(d.docentes)}</div>
+      <div class="kpi-sub">Professores únicos</div>
+      ${trend(d.docentes,prev?.docentes)}
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon-bg">📈</div>
+      <div class="kpi-label">Crescimento Semestral</div>
+      <div class="kpi-value">${growthVal!=null?Math.abs(growthVal).toFixed(2)+"%":"—"}</div>
+      <div class="kpi-sub">vs. ${months[0]} (início)</div>
+      ${growthVal!=null?`<span class="kpi-trend ${growthVal>=0?"up":"dn"}">${growthVal>=0?"▲":"▼"} acumulado no semestre</span>`:""}
+    </div>
+    <div class="kpi-card" style="grid-column:span 1;">
+      <div class="kpi-icon-bg">🎯</div>
+      <div class="kpi-label">Uso do Teto Semanal</div>
+      <div class="kpi-value">${fmt(capUsage)}%</div>
+      <div class="kpi-sub">${fmt(capRemaining)}h restantes</div>
+      <span class="kpi-trend ${capUsage<85?"up":"dn"}">${capUsage<100?"▲":"▼"} ${capUsage<100?"Dentro do limite":"Limite atingido"}</span>
+    </div>
+  </div>
+
+  ${months.length>1?`
+  <!-- Evolução por grupo -->
+  <div class="sec-label">Evolução por Grupo — ${months[0]} a ${months[months.length-1]}</div>
+  <div class="evo-grid">
+    ${GRPS.map((g,i)=>`
+    <div class="evo-card" style="--c:${GCOLS[i]}">
+      <div class="evo-name">${g}</div>
+      <div class="evo-months">
+        ${months.map(m=>`<div class="evo-m${m===active?" active-m":""}">
+          <div class="ml">${m.slice(0,3)}</div>
+          <div class="mv">${fmt(db[m].grupos[g]||0,0)}</div>
+        </div>`).join("")}
+      </div>
+    </div>`).join("")}
+  </div>`:""}
+
+  <!-- Charts row 1 -->
+  <div class="charts-row" style="margin-bottom:16px">
+    <div class="chart-card">
+      <div class="chart-title">Distribuição por Grupo — ${active}</div>
+      <div class="chart-wrap"><canvas id="c-donut"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Situação dos Registros — ${active}</div>
+      <div class="chart-wrap"><canvas id="c-sit"></canvas></div>
+    </div>
+  </div>
+
+  ${months.length>1?`
+  <div class="chart-card chart-line-full" style="margin-bottom:20px">
+    <div class="chart-title">Evolução Total de Horas Semanais — ${months[0]} a ${months[months.length-1]}</div>
+    <div class="chart-wrap" style="height:180px"><canvas id="c-line"></canvas></div>
+  </div>`:""}
+
+  <!-- Tables -->
+  <div class="tables-row">
+    <div class="tbl-card">
+      <div class="sec-label" style="margin-bottom:12px">Grupos Acadêmicos — ${active}</div>
+      <table>
+        <thead><tr><th>Grupo</th><th>Hrs Sem.</th><th>%</th></tr></thead>
+        <tbody>
+          ${Object.entries(d.grupoAcad).sort((a,b)=>b[1]-a[1]).map(([g,h])=>{
+            const p=(h/d.totalSemanal*100);
+            return`<tr>
+              <td style="color:var(--text)">${g}</td>
+              <td>${fmt(h)}</td>
+              <td><div style="display:flex;align-items:center;gap:8px;justify-content:flex-end">
+                <span style="color:var(--muted)">${p.toFixed(2)}%</span>
+                <div class="pbar"><div class="pfill" style="width:${p}%;background:var(--sky)"></div></div>
+              </div></td>
+            </tr>`;
+          }).join("")}
+          <tr class="trow-total"><td>TOTAL</td><td>${fmt(d.totalSemanal)}</td><td>100%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tbl-card">
+      <div class="sec-label" style="margin-bottom:12px">Situação dos Registros — ${active}</div>
+      <table>
+        <thead><tr><th>Situação</th><th>Registros</th><th>%</th></tr></thead>
+        <tbody>
+          ${(()=>{
+            const tot=(d.situacao.Saldo||0)+(d.situacao.Alterado||0);
+            return[["Saldo","pill-saldo",d.situacao.Saldo||0,"var(--teal)"],
+                   ["Alterado no Mês","pill-alt",d.situacao.Alterado||0,"var(--gold)"]].map(([lbl,cls,v,cor])=>{
+              const p=tot?(v/tot*100):0;
+              return`<tr>
+                <td><span class="pill ${cls}">${lbl}</span></td>
+                <td>${fmt(v)}</td>
+                <td><div style="display:flex;align-items:center;gap:8px;justify-content:flex-end">
+                  <span style="color:var(--muted)">${p.toFixed(2)}%</span>
+                  <div class="pbar"><div class="pfill" style="width:${p}%;background:${cor}"></div></div>
+                </div></td>
+              </tr>`;
+            }).join("");
+          })()}
+          <tr class="trow-total"><td>TOTAL</td><td>${fmt((d.situacao.Saldo||0)+(d.situacao.Alterado||0))}</td><td>100.00%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Top 10 -->
+  <div class="tbl-card">
+    <div class="sec-label" style="margin-bottom:12px">Top 10 Cursos por Horas Semanais — ${active}</div>
+    <table>
+      <thead><tr><th>#</th><th>Curso / Centro de Custo</th><th>Horas Semanais</th><th>% do Top 10</th></tr></thead>
+      <tbody>
+        ${(()=>{
+          const tt=d.top10.reduce((s,[,v])=>s+v,0);
+          return d.top10.map(([c,h],i)=>{
+            const p=tt?(h/tt*100):0;
+            return`<tr>
+              <td><span class="rank">${i+1}</span></td>
+              <td style="color:var(--text)">${c}</td>
+              <td style="color:var(--sky);font-weight:600">${fmt(h)}</td>
+              <td><div style="display:flex;align-items:center;gap:8px;justify-content:flex-end">
+                <span style="color:var(--muted)">${p.toFixed(2)}%</span>
+                <div class="pbar" style="width:80px"><div class="pfill" style="width:${p}%;background:var(--mid)"></div></div>
+              </div></td>
+            </tr>`;
+          }).join("");
+        })()}
+      </tbody>
+    </table>
+  </div>
+  `;
+
+  // destroy old
+  Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});charts={};
+
+  const gOpts={responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:"#7A92B8",font:{family:"Inter",size:11},boxWidth:12}}}};
+
+  // Donut
+  const dc=document.getElementById("c-donut");
+  if(dc){
+    const labels=Object.keys(d.grupos),vals=Object.values(d.grupos);
+    charts.donut=new Chart(dc,{type:"doughnut",data:{labels,datasets:[{data:vals,
+      backgroundColor:["#1565D8","#F5A800","#00A89D","#9B59B6"],
+      borderWidth:2,borderColor:"#0F2040",hoverOffset:6}]},
+      options:{...gOpts,cutout:"68%",plugins:{...gOpts.plugins,
+        tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${fmt(ctx.raw)} h (${(ctx.raw/d.totalSemanal*100).toFixed(2)}%)`}}}}});
+  }
+
+  // Sit bar
+  const sc=document.getElementById("c-sit");
+  if(sc){
+    charts.sit=new Chart(sc,{type:"bar",
+      data:{labels:["Saldo","Alterado no Mês"],datasets:[{
+        data:[d.situacao.Saldo||0,d.situacao.Alterado||0],
+        backgroundColor:["rgba(0,168,157,0.7)","rgba(245,168,0,0.7)"],
+        borderColor:["#00A89D","#F5A800"],borderWidth:1,
+        borderRadius:8,borderSkipped:false}]},
+      options:{...gOpts,plugins:{...gOpts.plugins,legend:{display:false}},
+        scales:{y:{grid:{color:"rgba(255,255,255,0.05)"},ticks:{color:"#7A92B8",font:{family:"Inter",size:11}}},
+          x:{grid:{display:false},ticks:{color:"#7A92B8",font:{family:"Inter",size:11}}}}}});
+  }
+
+  // Line
+  const lc=document.getElementById("c-line");
+  if(lc&&months.length>1){
+    charts.line=new Chart(lc,{type:"line",
+      data:{labels:months,datasets:[
+        {label:"Horas Semanais",data:months.map(m=>db[m].totalSemanal),
+          borderColor:"#3A8EF6",backgroundColor:"rgba(58,142,246,0.06)",
+          tension:0.35,fill:true,pointRadius:5,pointBackgroundColor:"#3A8EF6",
+          pointBorderColor:"#0F2040",pointBorderWidth:2,borderWidth:2},
+        {label:"Docentes × 20",data:months.map(m=>db[m].docentes*20),
+          borderColor:"#F5A800",backgroundColor:"transparent",
+          tension:0.35,fill:false,pointRadius:5,pointBackgroundColor:"#F5A800",
+          pointBorderColor:"#0F2040",pointBorderWidth:2,
+          borderWidth:2,borderDash:[5,4]}]},
+      options:{...gOpts,
+        plugins:{...gOpts.plugins,
+          tooltip:{callbacks:{label:ctx=>ctx.datasetIndex===1?` Docentes: ${Math.round(ctx.raw/20)}`:` Horas: ${fmt(ctx.raw)}`}},
+          legend:{position:"bottom",labels:{color:"#7A92B8",font:{family:"Inter",size:11},boxWidth:12}}},
+        scales:{y:{grid:{color:"rgba(255,255,255,0.04)"},ticks:{color:"#7A92B8",font:{family:"Inter",size:11}}},
+          x:{grid:{display:false},ticks:{color:"#7A92B8",font:{family:"Inter",size:11}}}}}});
+  }
+}
+
+function toast(msg,type){
+  const t=document.getElementById("toast");
+  t.textContent=msg;t.className="show "+type;
+  setTimeout(()=>{t.className=""},4000);
+}
+
+renderAll();
+</script>
+</body>
+</html>

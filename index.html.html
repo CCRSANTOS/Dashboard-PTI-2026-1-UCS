@@ -385,7 +385,9 @@ body:not(.unlocked) header,body:not(.unlocked) .upload-strip,body:not(.unlocked)
       <button type="button" class="active" data-sem="2026/1">1º sem 2026</button>
       <button type="button" data-sem="2026/2">2º sem 2026</button>
     </div>
+    <button class="btn-upload" id="btn-add-month" type="button">Adicionar mês</button>
     <span id="upload-status"></span>
+    <input id="upload-file" type="file" accept=".xlsx,.xls" style="display:none" />
   </div>
 
   <div class="month-tabs" id="month-tabs"></div>
@@ -477,6 +479,17 @@ document.querySelectorAll('#semester-select button').forEach(btn=>{
   btn.addEventListener('click',()=> setSelectedSemester(btn.dataset.sem));
 });
 
+document.getElementById('btn-add-month').addEventListener('click',()=>{
+  document.getElementById('upload-file').value = '';
+  document.getElementById('upload-file').click();
+});
+
+document.getElementById('upload-file').addEventListener('change',e=>{
+  const files=[...e.target.files].filter(f=>f.name.match(/\.xlsx?$/i));
+  if(!files.length) return;
+  requirePassword(()=>{ files.forEach(processFile); });
+});
+
 function processFile(file){
   const st=document.getElementById("upload-status");
   st.textContent=`⏳ Processando ${file.name}...`;
@@ -506,7 +519,10 @@ function processFile(file){
       if(!mesNome){const mc=data[0]?.MES_COMP;if(mc){const n=parseInt(mc);const f=Object.entries(MES_NUM).find(([,v])=>v===n);if(f)mesNome=f[0]==="MARCO"?"MARÇO":f[0]}}
       if(!mesNome)mesNome="MÊS "+(Object.keys(db).length+1);
       const mesNumBase=MES_NUM[mesNome.toUpperCase().replace("Ç","C")]||Object.keys(db).length+1;
-      const sem = getSelectedSemester();
+      let sem = '2026/1';
+      if(mesNumBase>=2 && mesNumBase<=7) sem='2026/1';
+      else if(mesNumBase>=8 && mesNumBase<=12) sem='2026/2';
+      else sem = getSelectedSemester();
       // offset mesNum so second semester sorts after first semester
       const mesNum = sem.includes('2') ? mesNumBase + 100 : mesNumBase;
       const key = `${sem} | ${mesNome}`;
@@ -570,8 +586,7 @@ function renderTabs(){
   document.getElementById("month-tabs").innerHTML=
     available.map(function(key){
       const delAttr = `onclick="deleteMonth('${key}', event)" title="Excluir ${db[key].mes}"`;
-      const semTag = db[key].sem ? ` (${db[key].sem})` : '';
-      const label = `${db[key].mes}${semTag}`;
+      const label = `${db[key].mes}`;
       return `<div class="tab-item${key===active?" active":""}"><button class="tab-btn${key===active?" active":""}" onclick="switchTo('${key}')">${label}</button><button class="tab-del" ${delAttr}>✖</button></div>`;
     }).join("");
 }
@@ -590,7 +605,7 @@ function renderContent(){
   const prev=pi>0?db[months[pi-1]]:null;
   const first=db[months[0]];
 
-  const dn = m => (db[m] && db[m].sem) ? `${db[m].mes} (${db[m].sem})` : (db[m] && db[m].mes) ? db[m].mes : m;
+  const dn = m => (db[m] && db[m].mes) ? db[m].mes : m;
 
   function trend(cur,ref){
     if(!ref||ref===cur) return `<span class="kpi-trend na">— mesmo período</span>`;

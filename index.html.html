@@ -154,7 +154,14 @@ main{padding:24px 32px 48px;max-width:1440px;margin:0 auto}
 .kpi-card:hover{transform:translateY(-3px);box-shadow:0 8px 32px rgba(0,0,0,0.4)}
 .kpi-icon-bg{
   position:absolute;right:14px;top:14px;
-  font-size:32px;opacity:0.07;
+  font-size:32px;
+  color:rgba(255,255,255,0.88);
+  opacity:1;
+  padding:10px;
+  border-radius:16px;
+  background:rgba(255,255,255,0.08);
+  text-shadow:0 4px 14px rgba(0,0,0,0.25);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);
 }
 .kpi-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
 .kpi-value{
@@ -566,7 +573,7 @@ function renderTabs(){
       const semTag = db[key].sem ? ` (${db[key].sem})` : '';
       const label = `${db[key].mes}${semTag}`;
       return `<div class="tab-item${key===active?" active":""}"><button class="tab-btn${key===active?" active":""}" onclick="switchTo('${key}')">${label}</button><button class="tab-del" ${delAttr}>✖</button></div>`;
-    }).join("")+`<span class="tab-hint">← Carregue novos meses acima</span>`;
+    }).join("");
 }
 
 function switchTo(m){active=m;renderTabs();renderContent()}

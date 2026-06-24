@@ -104,26 +104,34 @@ header{
 }
 .header-top{
   display:flex;align-items:center;justify-content:space-between;
-  padding:10px 32px;gap:16px;
+  padding:8px 24px;gap:12px;
   border-bottom:1px solid var(--border);
 }
 .brand{display:flex;align-items:center;gap:0}
-.brand img{height:72px;width:auto;object-fit:contain;filter:drop-shadow(0 0 14px rgba(245,168,0,0.5)) drop-shadow(0 0 28px rgba(245,168,0,0.2))}
-.brand-divider{width:1px;height:44px;background:var(--border);margin:0 18px}
+.brand img{height:60px;width:auto;object-fit:contain;filter:drop-shadow(0 0 14px rgba(245,168,0,0.5)) drop-shadow(0 0 28px rgba(245,168,0,0.2))}
+.brand-divider{width:1px;height:34px;background:var(--border);margin:0 12px}
 .brand-text h1{
-  font-family:"Montserrat",sans-serif;font-size:14px;font-weight:700;
+  font-family:"Montserrat",sans-serif;font-size:13px;font-weight:700;
   color:var(--text);letter-spacing:0.4px;white-space:nowrap;
 }
 .brand-text p{font-size:11px;color:var(--muted);margin-top:2px}
-.header-meta{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-.theme-switch{display:inline-flex;align-items:center;gap:6px;padding:4px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,0.04)}
-.theme-btn{
-  border:1px solid transparent;background:transparent;color:var(--muted);
-  font-size:11px;font-weight:700;padding:6px 10px;border-radius:8px;cursor:pointer;
-  transition:all 0.2s;font-family:"Inter",sans-serif;letter-spacing:0.2px;
+.header-meta{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:6px}
+.meta-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.theme-toggle{
+  border:1px solid var(--border);
+  background:rgba(255,255,255,0.04);
+  color:var(--text);
+  font-size:10.5px;
+  font-weight:700;
+  padding:6px 10px;
+  border-radius:999px;
+  cursor:pointer;
+  transition:all 0.2s;
+  font-family:"Inter",sans-serif;
+  letter-spacing:0.2px;
+  white-space:nowrap;
 }
-.theme-btn:hover{color:var(--text);border-color:var(--border)}
-.theme-btn.active{background:linear-gradient(135deg,var(--mid),var(--sky));color:#fff;box-shadow:var(--glow-blue)}
+.theme-toggle:hover{border-color:rgba(255,255,255,0.22)}
 .badge{
   background:rgba(245,168,0,0.12);border:1px solid rgba(245,168,0,0.3);
   color:var(--gold);padding:5px 13px;border-radius:20px;font-size:11px;font-weight:600;
@@ -131,16 +139,15 @@ header{
 }
 .cap-note{
   background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
-  color:var(--text);padding:6px 12px;border-radius:20px;font-size:11px;font-weight:600;
+  color:var(--text);padding:5px 10px;border-radius:999px;font-size:10.5px;font-weight:600;
   letter-spacing:0.2px;
 }
-#last-update{font-size:11px;color:var(--muted)}
 
 /* ─ Upload strip ─ */
 .upload-strip{
   background:linear-gradient(90deg,rgba(21,101,216,0.15) 0%,rgba(0,168,157,0.08) 100%);
   border-bottom:1px solid var(--border);
-  padding:9px 32px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:7px 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
 }
 .upload-strip p{font-size:12px;color:var(--muted)}
 .upload-strip p strong{color:var(--text)}
@@ -154,7 +161,7 @@ header{
 }
 .btn-upload:hover{transform:translateY(-1px);box-shadow:0 0 32px rgba(245,168,0,0.45)}
 .semester-switch{display:inline-flex;align-items:center;gap:8px;margin-left:12px}
-.semester-switch button{border:1px solid rgba(255,255,255,0.1);background:transparent;color:var(--text);font-size:12px;padding:8px 12px;border-radius:8px;cursor:pointer;transition:all 0.2s}
+.semester-switch button{border:1px solid rgba(255,255,255,0.1);background:transparent;color:var(--text);font-size:11px;padding:7px 11px;border-radius:8px;cursor:pointer;transition:all 0.2s}
 .semester-switch button.active{background:rgba(245,168,0.28);border-color:rgba(245,168,0.4);color:#081428}
 .semester-switch button:hover{border-color:rgba(255,255,255,0.18)}
 #upload-status{font-size:11px;color:var(--gold);font-weight:500}
@@ -237,7 +244,7 @@ body[data-theme="light"] .kpi-icon-bg{
 }
 .kpi-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
 .kpi-value{
-  font-family:"Montserrat",sans-serif;font-size:36px;font-weight:800;
+  font-family:"Montserrat",sans-serif;font-size:24px;font-weight:800;
   color:var(--text);margin:8px 0 2px;line-height:1;
 }
 .kpi-sub{font-size:11px;color:var(--muted);margin-bottom:8px}
@@ -393,10 +400,24 @@ body:not(.unlocked) header,body:not(.unlocked) .upload-strip,body:not(.unlocked)
   .kpi-grid,.evo-grid{grid-template-columns:repeat(2,1fr)}
   .charts-row,.tables-row{grid-template-columns:1fr}
   .header-top,.upload-strip,.month-tabs{padding-left:16px;padding-right:16px}
+  .header-top{flex-direction:column;align-items:flex-start;gap:8px}
+  .brand-text h1{white-space:normal;line-height:1.3}
+  .header-meta{align-items:flex-start;width:100%}
+  .meta-row{justify-content:flex-start}
+  .upload-strip{gap:8px}
+  .semester-switch{margin-left:0}
 }
 @media(max-width:520px){
   .kpi-grid,.evo-grid{grid-template-columns:1fr}
   .brand img{height:52px}
+  .header-top,.upload-strip,.month-tabs{padding-left:12px;padding-right:12px}
+  .brand-divider{display:none}
+  .upload-strip{padding-top:8px;padding-bottom:8px}
+  .semester-switch{display:grid;grid-template-columns:1fr 1fr;width:100%}
+  .semester-switch button{width:100%}
+  .meta-row{width:100%}
+  .theme-toggle{padding:5px 9px;font-size:10px}
+  .kpi-value{font-size:20px}
 }
 </style>
 </head>
@@ -445,14 +466,11 @@ body:not(.unlocked) header,body:not(.unlocked) .upload-strip,body:not(.unlocked)
       </div>
     </div>
     <div class="header-meta">
-      <div class="theme-switch" role="group" aria-label="Selecionar tema de cores">
-        <button type="button" class="theme-btn" data-theme="light">Light</button>
-        <button type="button" class="theme-btn active" data-theme="dark">Dark</button>
-        <button type="button" class="theme-btn" data-theme="classic-dark">Classic Dark</button>
-      </div>
       <span class="badge">1º SEM 2026</span>
-      <span class="cap-note">Teto semanal máximo: 13.820h</span>
-      <span id="last-update">Atualizado em 19/06/2026</span>
+      <div class="meta-row">
+        <span class="cap-note">Teto semanal máximo: 13.820h</span>
+        <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Alternar tema">Tema: Dark</button>
+      </div>
     </div>
   </div>
 
@@ -461,7 +479,6 @@ body:not(.unlocked) header,body:not(.unlocked) .upload-strip,body:not(.unlocked)
       <button type="button" class="active" data-sem="2026/1">1º sem 2026</button>
       <button type="button" data-sem="2026/2">2º sem 2026</button>
     </div>
-    <button class="btn-upload" id="btn-add-month" type="button">Adicionar mês</button>
     <span id="upload-status"></span>
     <input id="upload-file" type="file" accept=".xlsx,.xls" style="display:none" />
   </div>
@@ -510,6 +527,7 @@ let active = "JUNHO";
 let charts = {};
 const THEME_KEY = 'pti-dashboard-theme';
 const VALID_THEMES = ['light','dark','classic-dark'];
+const THEME_LABELS = {light:'Light',dark:'Dark','classic-dark':'Classic Dark'};
 const MES_NUM={JANEIRO:1,FEVEREIRO:2,"MARÇO":3,MARCO:3,ABRIL:4,MAIO:5,JUNHO:6,JULHO:7,AGOSTO:8,SETEMBRO:9,OUTUBRO:10,NOVEMBRO:11,DEZEMBRO:12};
 
 function sorted(){return Object.keys(db).sort((a,b)=>db[a].mesNum-db[b].mesNum)}
@@ -536,11 +554,16 @@ function hexToRgba(hex,alpha){
 function applyTheme(theme,rerender=true){
   const next = VALID_THEMES.includes(theme) ? theme : 'dark';
   document.body.setAttribute('data-theme', next);
-  document.querySelectorAll('.theme-btn').forEach(btn=>{
-    btn.classList.toggle('active', btn.dataset.theme===next);
-  });
+  const tbtn = document.getElementById('theme-toggle');
+  if(tbtn) tbtn.textContent = `Tema: ${THEME_LABELS[next] || 'Dark'}`;
   localStorage.setItem(THEME_KEY,next);
   if(rerender && authenticated) renderAll();
+}
+function cycleTheme(){
+  const current = document.body.getAttribute('data-theme') || 'dark';
+  const idx = VALID_THEMES.indexOf(current);
+  const next = VALID_THEMES[(idx+1+VALID_THEMES.length)%VALID_THEMES.length];
+  applyTheme(next);
 }
 
 function getSelectedSemester(){
@@ -552,7 +575,7 @@ function setSelectedSemester(sem){
     btn.classList.toggle('active', btn.dataset.sem===sem);
   });
   const badge = document.querySelector('.header-meta .badge');
-  const capNote = document.querySelector('.header-meta .cap-note');
+  const capNote = document.querySelector('.cap-note');
   if(badge) badge.textContent = sem==='2026/2' ? '2º SEM 2026' : '1º SEM 2026';
   if(capNote) capNote.textContent = sem==='2026/2' ? 'Teto semanal máximo: 14.089,50h' : 'Teto semanal máximo: 13.820h';
   const available = getSemesterMonths(sem);
@@ -581,14 +604,7 @@ document.addEventListener("drop",e=>{
 document.querySelectorAll('#semester-select button').forEach(btn=>{
   btn.addEventListener('click',()=> setSelectedSemester(btn.dataset.sem));
 });
-document.querySelectorAll('.theme-btn').forEach(btn=>{
-  btn.addEventListener('click',()=> applyTheme(btn.dataset.theme));
-});
-
-document.getElementById('btn-add-month').addEventListener('click',()=>{
-  document.getElementById('upload-file').value = '';
-  document.getElementById('upload-file').click();
-});
+document.getElementById('theme-toggle').addEventListener('click',cycleTheme);
 
 document.getElementById('upload-file').addEventListener('change',e=>{
   const files=[...e.target.files].filter(f=>f.name.match(/\.xlsx?$/i));
@@ -648,7 +664,6 @@ function processFile(file){
         situacao,grupoAcad:Object.fromEntries(Object.entries(grupoAcad).sort((a,b)=>b[1]-a[1]).map(([k,v])=>[k,Math.round(v*100)/100])),top10};
       active=key;
       st.textContent=`✅ ${mesNome} carregado`;
-      document.getElementById("last-update").textContent="Atualizado em "+new Date().toLocaleDateString("pt-BR");
       renderAll();toast(`✅ ${mesNome} adicionado com sucesso!`,"ok");
       setTimeout(()=>{st.textContent=""},4000);
     }catch(err){st.textContent="";toast("❌ "+err.message,"err")}
@@ -673,7 +688,6 @@ function deleteMonth(m,event){
       if(months.length===0){
         document.getElementById('main-content').innerHTML='<div class="loading"><p>Sem dados.</p></div>';
         document.getElementById('month-tabs').innerHTML='';
-        document.getElementById('last-update').textContent='';
         toast(`✅ Mês ${target} excluído`,'ok');
         active=null;charts={};return;
       }

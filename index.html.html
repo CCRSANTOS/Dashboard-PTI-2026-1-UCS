@@ -6,6 +6,7 @@
 <title>Dashboard Gerencial PTI - Universidade Cruzeiro do Sul</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -26,12 +27,61 @@
   --border: rgba(255,255,255,0.07);
   --text:   #E8EEF8;
   --muted:  #7A92B8;
+  --heading:#FFFFFF;
   --radius: 14px;
   --glow-gold: 0 0 24px rgba(245,168,0,0.25);
   --glow-blue: 0 0 24px rgba(21,101,216,0.3);
 }
 
-body{font-family:"Inter",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+html[data-theme="classic-dark"]{
+  color-scheme: dark;
+}
+
+html[data-theme="dark"]{
+  color-scheme: dark;
+  --navy:#050B16;
+  --navy2:#0B1320;
+  --blue:#12325E;
+  --mid:#2357C7;
+  --sky:#5D9CFF;
+  --teal:#13B0A0;
+  --gold:#D8A23B;
+  --gold2:#F5CF7A;
+  --bg:#040814;
+  --bg2:#0A1322;
+  --card:#0C1729;
+  --card2:#111F36;
+  --border:rgba(255,255,255,0.08);
+  --text:#EAF0F8;
+  --muted:#8797AE;
+  --heading:#FFFFFF;
+  --glow-gold:0 0 20px rgba(216,162,59,0.22);
+  --glow-blue:0 0 20px rgba(35,87,199,0.24);
+}
+
+html[data-theme="light"]{
+  color-scheme: light;
+  --navy:#EEF3FB;
+  --navy2:#E2EAF6;
+  --blue:#295CB8;
+  --mid:#3C73DD;
+  --sky:#5A9BFF;
+  --teal:#0F9D8A;
+  --gold:#B97A00;
+  --gold2:#D49A1E;
+  --bg:#F6F8FC;
+  --bg2:#FFFFFF;
+  --card:#FFFFFF;
+  --card2:#F0F4FB;
+  --border:rgba(12,24,48,0.10);
+  --text:#10213A;
+  --muted:#5E6C84;
+  --heading:#081428;
+  --glow-gold:0 0 18px rgba(185,122,0,0.15);
+  --glow-blue:0 0 18px rgba(41,92,184,0.18);
+}
+
+body{font-family:"Inter",sans-serif;background:linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%);color:var(--text);min-height:100vh;overflow-x:hidden}
 
 /* ─ Scrollbar ─ */
 ::-webkit-scrollbar{width:6px;height:6px}
@@ -54,10 +104,21 @@ header{
 .brand-divider{width:1px;height:44px;background:rgba(255,255,255,0.12);margin:0 18px}
 .brand-text h1{
   font-family:"Montserrat",sans-serif;font-size:14px;font-weight:700;
-  color:#fff;letter-spacing:0.4px;white-space:nowrap;
+  color:var(--heading);letter-spacing:0.4px;white-space:nowrap;
 }
 .brand-text p{font-size:11px;color:var(--muted);margin-top:2px}
 .header-meta{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.theme-switch{
+  display:inline-flex;align-items:center;gap:4px;padding:4px;
+  background:rgba(255,255,255,0.04);border:1px solid var(--border);
+  border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,0.08);
+}
+.theme-switch button{
+  border:none;background:transparent;color:var(--muted);font-size:11px;
+  padding:6px 10px;border-radius:999px;cursor:pointer;transition:all 0.2s;
+}
+.theme-switch button:hover{color:var(--heading)}
+.theme-switch button.active{background:var(--gold);color:var(--navy);font-weight:700}
 .badge{
   background:rgba(245,168,0,0.12);border:1px solid rgba(245,168,0,0.3);
   color:var(--gold);padding:5px 13px;border-radius:20px;font-size:11px;font-weight:600;
@@ -116,7 +177,7 @@ header{
   letter-spacing:0.2px;
 }
 .tab-btn:hover{color:rgba(255,255,255,0.8)}
-.tab-btn.active{color:#fff;border-bottom-color:var(--gold);font-weight:600}
+.tab-btn.active{color:var(--heading);border-bottom-color:var(--gold);font-weight:600}
 .tab-hint{margin-left:auto;font-size:11px;color:rgba(255,255,255,0.18);padding:11px 0;white-space:nowrap}
 
 .tab-item{display:inline-flex;align-items:center;margin-right:8px}
@@ -166,7 +227,7 @@ main{padding:24px 32px 48px;max-width:1440px;margin:0 auto}
 .kpi-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
 .kpi-value{
   font-family:"Montserrat",sans-serif;font-size:36px;font-weight:800;
-  color:#fff;margin:8px 0 2px;line-height:1;
+  color:var(--heading);margin:8px 0 2px;line-height:1;
 }
 .kpi-sub{font-size:11px;color:var(--muted);margin-bottom:8px}
 .kpi-trend{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;
@@ -213,7 +274,7 @@ main{padding:24px 32px 48px;max-width:1440px;margin:0 auto}
 .evo-m{text-align:center;flex:1;min-width:44px;
   background:rgba(255,255,255,0.03);border-radius:8px;padding:6px 4px}
 .evo-m .ml{font-size:9px;color:var(--muted);margin-bottom:3px}
-.evo-m .mv{font-size:12px;font-weight:700;color:#fff}
+.evo-m .mv{font-size:12px;font-weight:700;color:var(--heading)}
 .evo-m.active-m{background:rgba(245,168,0,0.1);border:1px solid rgba(245,168,0,0.2)}
 .evo-m.active-m .mv{color:var(--gold)}
 
@@ -260,6 +321,12 @@ body::before{
     radial-gradient(ellipse 80% 50% at 15% 90%,rgba(21,101,216,0.06) 0%,transparent 60%),
     radial-gradient(ellipse 60% 40% at 85% 10%,rgba(0,168,157,0.05) 0%,transparent 55%),
     radial-gradient(ellipse 50% 50% at 50% 50%,rgba(245,168,0,0.02) 0%,transparent 70%);
+}
+html[data-theme="light"] body::before{
+  background:
+    radial-gradient(ellipse 80% 50% at 15% 90%,rgba(59,120,232,0.08) 0%,transparent 60%),
+    radial-gradient(ellipse 60% 40% at 85% 10%,rgba(15,157,138,0.07) 0%,transparent 55%),
+    radial-gradient(ellipse 50% 50% at 50% 50%,rgba(185,122,0,0.05) 0%,transparent 70%);
 }
 main{position:relative;z-index:1}
 
@@ -372,11 +439,15 @@ body:not(.unlocked) header,body:not(.unlocked) .upload-strip,body:not(.unlocked)
         <p>Relatório de Fechamento</p>
       </div>
     </div>
-    </div>
     <div class="header-meta">
       <span class="badge">1º SEM 2026</span>
       <span class="cap-note">Teto semanal máximo: 13.820h</span>
       <span id="last-update">Atualizado em 19/06/2026</span>
+      <div class="theme-switch" role="group" aria-label="Selecionar tema">
+        <button type="button" class="active" data-theme="classic-dark">Classic Dark</button>
+        <button type="button" data-theme="dark">Dark</button>
+        <button type="button" data-theme="light">Light</button>
+      </div>
     </div>
   </div>
 
@@ -399,6 +470,176 @@ body:not(.unlocked) header,body:not(.unlocked) .upload-strip,body:not(.unlocked)
 
 <script>
 // ══════════════════════════════════════════════
+const SUPABASE_URL = 'https://chsztmzltdsodnicmoqs.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_WgrMH4DGzg0RlrIkVP_iGA_wdr74iYL';
+const DEFAULT_THEME = 'classic-dark';
+const THEME_STORAGE_KEY = 'dashboard-theme';
+const UI_STATE_KEY = 'dashboard-ui-state';
+const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+let currentTheme = DEFAULT_THEME;
+
+function getThemeFromStorage(){
+  return localStorage.getItem(THEME_STORAGE_KEY) || DEFAULT_THEME;
+}
+
+function syncThemeButtons(){
+  document.querySelectorAll('.theme-switch button').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.theme===currentTheme);
+  });
+}
+
+async function persistTheme(theme = currentTheme, semester = getSelectedSemester()){
+  localStorage.setItem(THEME_STORAGE_KEY, theme);
+  localStorage.setItem(UI_STATE_KEY, JSON.stringify({theme,semester}));
+  if(supabaseClient){
+    try{
+      const {error} = await supabaseClient.from('dashboard_settings').upsert({
+        setting_key:'ui-state',
+        payload:{theme,semester},
+        updated_at:new Date().toISOString()
+      });
+      if(error){
+        console.warn('Supabase theme sync failed:', error.message);
+      }
+    }catch(err){
+      console.warn('Supabase theme sync failed:', err.message);
+    }
+  }
+}
+
+function applyTheme(theme, options={}){
+  const nextTheme = ['classic-dark','dark','light'].includes(theme) ? theme : DEFAULT_THEME;
+  currentTheme = nextTheme;
+  document.documentElement.dataset.theme = nextTheme;
+  syncThemeButtons();
+  if(options.persist !== false){
+    void persistTheme(nextTheme, getSelectedSemester());
+  }
+  if(authenticated){
+    renderAll();
+  }
+}
+
+function getThemeChartTokens(){
+  const styles = getComputedStyle(document.documentElement);
+  const theme = document.documentElement.dataset.theme || DEFAULT_THEME;
+  return {
+    text: (styles.getPropertyValue('--muted') || '#7A92B8').trim(),
+    card: (styles.getPropertyValue('--card') || '#0F2040').trim(),
+    gridStrong: theme === 'light' ? 'rgba(16,33,58,0.09)' : 'rgba(255,255,255,0.05)',
+    gridSoft: theme === 'light' ? 'rgba(16,33,58,0.06)' : 'rgba(255,255,255,0.04)'
+  };
+}
+
+async function loadUiStateFromSupabase(){
+  if(!supabaseClient) return null;
+  const {data, error} = await supabaseClient
+    .from('dashboard_settings')
+    .select('payload')
+    .eq('setting_key', 'ui-state')
+    .maybeSingle();
+  if(error){
+    throw error;
+  }
+  return data?.payload || null;
+}
+
+async function loadMonthsFromSupabase(){
+  if(!supabaseClient) return null;
+  const {data, error} = await supabaseClient
+    .from('dashboard_months')
+    .select('month_key,semester,month_name,month_num,payload,is_seed')
+    .order('month_num', {ascending:true});
+  if(error){
+    throw error;
+  }
+  return data || [];
+}
+
+function buildMonthRecord(monthKey, month, seed=false){
+  return {
+    month_key: monthKey,
+    semester: month.sem || '2026/1',
+    month_name: month.mes,
+    month_num: month.mesNum,
+    payload: {...month, isSeed: seed},
+    is_seed: seed,
+    updated_at: new Date().toISOString()
+  };
+}
+
+async function upsertMonthToSupabase(monthKey){
+  if(!supabaseClient || !db[monthKey]) return;
+  const {error} = await supabaseClient.from('dashboard_months').upsert(buildMonthRecord(monthKey, db[monthKey], Boolean(db[monthKey].isSeed)));
+  if(error){
+    throw error;
+  }
+}
+
+async function deleteMonthFromSupabase(monthKey){
+  if(!supabaseClient) return;
+  const {error} = await supabaseClient.from('dashboard_months').delete().eq('month_key', monthKey);
+  if(error){
+    throw error;
+  }
+}
+
+async function seedMonthsToSupabase(){
+  if(!supabaseClient) return;
+  const payload = Object.entries(SEED).map(([monthKey, month])=>buildMonthRecord(monthKey, month, true));
+  const {error} = await supabaseClient.from('dashboard_months').upsert(payload);
+  if(error){
+    throw error;
+  }
+}
+
+async function bootstrapRemoteState(){
+  if(!supabaseClient) return;
+  try{
+    const [remoteMonths, remoteState] = await Promise.all([
+      loadMonthsFromSupabase(),
+      loadUiStateFromSupabase()
+    ]);
+
+    if(remoteMonths && remoteMonths.length){
+      const nextDb = {};
+      remoteMonths.forEach(row=>{
+        if(row?.month_key && row?.payload){
+          nextDb[row.month_key] = {
+            ...row.payload,
+            mes: row.month_name || row.payload.mes,
+            sem: row.semester || row.payload.sem || '2026/1',
+            mesNum: row.month_num || row.payload.mesNum,
+            isSeed: Boolean(row.is_seed)
+          };
+        }
+      });
+      if(Object.keys(nextDb).length){
+        db = nextDb;
+      }
+    }else{
+      await seedMonthsToSupabase();
+    }
+
+    if(remoteState?.theme){
+      applyTheme(remoteState.theme, {persist:false});
+    }
+
+    if(remoteState?.semester){
+      setSelectedSemester(remoteState.semester, {persist:false, remote:false});
+    }else if(!remoteMonths || !remoteMonths.length){
+      setSelectedSemester('2026/1', {persist:false, remote:false});
+    }
+
+    renderAll();
+    if(authenticated){
+      document.getElementById('main-content').innerHTML = document.getElementById('main-content').innerHTML;
+    }
+  }catch(error){
+    console.warn('Supabase bootstrap failed:', error.message);
+  }
+}
+
 // DADOS SEED — Março a Junho 2026
 // ══════════════════════════════════════════════
 const SEED = {
@@ -444,16 +685,16 @@ function getSelectedSemester(){
   const btn = document.querySelector('#semester-select button.active');
   return btn?.dataset?.sem || '2026/1';
 }
-function setSelectedSemester(sem){
+function setSelectedSemester(sem, options={}){
   document.querySelectorAll('#semester-select button').forEach(btn=>{
     btn.classList.toggle('active', btn.dataset.sem===sem);
   });
   const badge = document.querySelector('.header-meta .badge');
-  const capNote = document.querySelector('.header-meta .cap-note');
-  if(badge) badge.textContent = sem==='2026/2' ? '2º SEM 2026' : '1º SEM 2026';
-  if(capNote) capNote.textContent = sem==='2026/2' ? 'Teto semanal máximo: 14.089,50h' : 'Teto semanal máximo: 13.820h';
   const available = getSemesterMonths(sem);
   active = available.length ? available[0] : null;
+  if(options.persist !== false){
+    persistTheme(currentTheme, sem);
+  }
   renderAll();
 }
 function findDbKeyFor(monthNum,sem){
@@ -477,6 +718,10 @@ document.addEventListener("drop",e=>{
 
 document.querySelectorAll('#semester-select button').forEach(btn=>{
   btn.addEventListener('click',()=> setSelectedSemester(btn.dataset.sem));
+});
+
+document.querySelectorAll('.theme-switch button').forEach(btn=>{
+  btn.addEventListener('click',()=> applyTheme(btn.dataset.theme));
 });
 
 document.getElementById('btn-add-month').addEventListener('click',()=>{
@@ -541,6 +786,7 @@ function processFile(file){
         docentes:docSet.size,grupos:Object.fromEntries(Object.entries(grupos).map(([k,v])=>[k,Math.round(v*100)/100])),
         situacao,grupoAcad:Object.fromEntries(Object.entries(grupoAcad).sort((a,b)=>b[1]-a[1]).map(([k,v])=>[k,Math.round(v*100)/100])),top10};
       active=key;
+      void upsertMonthToSupabase(key).catch(err=>console.warn('Supabase month sync failed:', err.message));
       st.textContent=`✅ ${mesNome} carregado`;
       document.getElementById("last-update").textContent="Atualizado em "+new Date().toLocaleDateString("pt-BR");
       renderAll();toast(`✅ ${mesNome} adicionado com sucesso!`,"ok");
@@ -563,6 +809,7 @@ function deleteMonth(m,event){
       const monthsBefore = sorted();
       const idx = monthsBefore.indexOf(target);
       delete db[target];
+      void deleteMonthFromSupabase(target).catch(err=>console.warn('Supabase month delete sync failed:', err.message));
       const months = sorted();
       if(months.length===0){
         document.getElementById('main-content').innerHTML='<div class="loading"><p>Sem dados.</p></div>';
@@ -775,8 +1022,9 @@ function renderContent(){
   // destroy old
   Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});charts={};
 
+  const themeTokens = getThemeChartTokens();
   const gOpts={responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{labels:{color:"#7A92B8",font:{family:"Inter",size:11},boxWidth:12}}}};
+    plugins:{legend:{labels:{color:themeTokens.text,font:{family:"Inter",size:11},boxWidth:12}}}};
 
   // Donut
   const dc=document.getElementById("c-donut");
@@ -784,7 +1032,7 @@ function renderContent(){
     const labels=Object.keys(d.grupos),vals=Object.values(d.grupos);
     charts.donut=new Chart(dc,{type:"doughnut",data:{labels,datasets:[{data:vals,
       backgroundColor:["#1565D8","#F5A800","#00A89D","#9B59B6"],
-      borderWidth:2,borderColor:"#0F2040",hoverOffset:6}]},
+      borderWidth:2,borderColor:themeTokens.card,hoverOffset:6}]},
       options:{...gOpts,cutout:"68%",plugins:{...gOpts.plugins,
         tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${fmt(ctx.raw)} h (${(ctx.raw/d.totalSemanal*100).toFixed(2)}%)`}}}}});
   }
@@ -799,8 +1047,8 @@ function renderContent(){
         borderColor:["#00A89D","#F5A800"],borderWidth:1,
         borderRadius:8,borderSkipped:false}]},
       options:{...gOpts,plugins:{...gOpts.plugins,legend:{display:false}},
-        scales:{y:{grid:{color:"rgba(255,255,255,0.05)"},ticks:{color:"#7A92B8",font:{family:"Inter",size:11}}},
-          x:{grid:{display:false},ticks:{color:"#7A92B8",font:{family:"Inter",size:11}}}}}});
+        scales:{y:{grid:{color:themeTokens.gridStrong},ticks:{color:themeTokens.text,font:{family:"Inter",size:11}}},
+          x:{grid:{display:false},ticks:{color:themeTokens.text,font:{family:"Inter",size:11}}}}}});
   }
 
   // Line
@@ -811,13 +1059,13 @@ function renderContent(){
         {label:"Horas Semanais",data:months.map(m=>db[m].totalSemanal),
           borderColor:"#3A8EF6",backgroundColor:"rgba(58,142,246,0.06)",
           tension:0.35,fill:true,pointRadius:5,pointBackgroundColor:"#3A8EF6",
-          pointBorderColor:"#0F2040",pointBorderWidth:2,borderWidth:2}]},
+          pointBorderColor:themeTokens.card,pointBorderWidth:2,borderWidth:2}]},
       options:{...gOpts,
         plugins:{...gOpts.plugins,
           tooltip:{callbacks:{label:ctx=>` Horas Semanais: ${fmt(ctx.raw)}`}},
-          legend:{position:"bottom",labels:{color:"#7A92B8",font:{family:"Inter",size:11},boxWidth:12}}},
-        scales:{y:{grid:{color:"rgba(255,255,255,0.04)"},ticks:{color:"#7A92B8",font:{family:"Inter",size:11}}},
-          x:{grid:{display:false},ticks:{color:"#7A92B8",font:{family:"Inter",size:11}}}}}});
+          legend:{position:"bottom",labels:{color:themeTokens.text,font:{family:"Inter",size:11},boxWidth:12}}},
+        scales:{y:{grid:{color:themeTokens.gridSoft},ticks:{color:themeTokens.text,font:{family:"Inter",size:11}}},
+          x:{grid:{display:false},ticks:{color:themeTokens.text,font:{family:"Inter",size:11}}}}}});
   }
 }
 
@@ -885,7 +1133,9 @@ document.getElementById('login-submit').addEventListener('click',login);
 document.getElementById('login-input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();login()}});
 document.getElementById('pw-input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('pw-submit').click()}});
 
+applyTheme(getThemeFromStorage(), {persist:false});
 showLoginScreen();
+bootstrapRemoteState();
 </script>
 </body>
 </html>
